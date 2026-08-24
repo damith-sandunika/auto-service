@@ -44,8 +44,8 @@ export default function Expenses({ expenses }) {
         }>
             <Head title="Expenses" />
             <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <table className="w-full text-left text-sm text-slate-600">
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+                    <table className="w-full text-left text-sm text-slate-600 min-w-[600px]">
                         <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
                                 <th className="px-6 py-4 font-bold text-slate-500 uppercase">Date</th>

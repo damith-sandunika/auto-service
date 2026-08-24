@@ -16,8 +16,8 @@ class OrderController extends Controller
     {
         $garageId = Auth::user()->garage_id;
         
-        $invoices = Invoice::with(['job.vehicle', 'payments'])->where('garage_id', $garageId)->get();
-        $jobs = Job::with('vehicle')->where('garage_id', $garageId)->get();
+        $invoices = Invoice::with(['job.vehicle', 'payments'])->where('garage_id', $garageId)->latest()->get();
+        $jobs = Job::with('vehicle')->where('garage_id', $garageId)->latest()->get();
 
         return Inertia::render('GarageOwner/Orders', [
             'invoices' => $invoices,
@@ -35,8 +35,19 @@ class OrderController extends Controller
 
         $validated['garage_id'] = Auth::user()->garage_id;
         
-        Invoice::create($validated);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($validated) {
+            Invoice::create($validated);
+        });
         return redirect()->back()->with('success', 'Invoice created successfully.');
+    }
+
+    public function show(string $id)
+    {
+        $invoice = Invoice::with(['job.vehicle', 'job.items', 'job.mechanic', 'payments', 'garage'])->where('garage_id', Auth::user()->garage_id)->findOrFail($id);
+        
+        return Inertia::render('GarageOwner/Orders/Show', [
+            'invoice' => $invoice
+        ]);
     }
 
     public function update(Request $request, string $id)
@@ -71,12 +82,14 @@ class OrderController extends Controller
             'payment_date' => 'required|date',
         ]);
 
-        $invoice->payments()->create($validated);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($invoice, $validated) {
+            $invoice->payments()->create($validated);
 
-        $totalPaid = $invoice->payments()->sum('amount');
-        if ($totalPaid >= $invoice->total_amount) {
-            $invoice->update(['status' => 'paid']);
-        }
+            $totalPaid = $invoice->payments()->sum('amount');
+            if ($totalPaid >= $invoice->total_amount) {
+                $invoice->update(['status' => 'paid']);
+            }
+        });
 
         return redirect()->back()->with('success', 'Payment added successfully.');
     }

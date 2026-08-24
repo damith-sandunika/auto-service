@@ -27,6 +27,14 @@ class PosController extends Controller
     {
         $garageId = $this->getGarageId();
 
+        $activeSession = \App\Models\RegisterSession::where('garage_id', $garageId)
+            ->where('status', 'open')
+            ->first();
+
+        if (!$activeSession) {
+            return redirect()->route('owner.dashboard')->with('error', 'Please open a branch shift before accessing the POS.');
+        }
+
         $services = ServiceCatalog::where('garage_id', $garageId)->get();
         $inventory = Inventory::where('garage_id', $garageId)->get();
         $mechanics = User::where('role', 'garage_staff')->where('garage_id', $garageId)->get();
@@ -122,18 +130,32 @@ class PosController extends Controller
             $invoice = Invoice::create([
                 'garage_id' => $garageId,
                 'job_id' => $job->id,
-                'total_amount' => $totalAmount,
+                'total_amount' => collect($request->items)->sum(function($item) { return $item['price'] * $item['quantity']; }), // Subtotal
+                'discount' => $request->discount ?? 0,
+                'tendered_amount' => $request->tendered_amount ?? 0,
+                'balance_amount' => $request->balance_amount ?? 0,
                 'status' => $request->payment_status
             ]);
 
-            // Add Payment if provided
-            if ($request->payment_status === 'paid' || $request->amount_paid > 0) {
-                $payAmount = $request->amount_paid > 0 ? $request->amount_paid : $totalAmount;
+            // Add Payment if provided and not credit
+            if ($request->payment_status === 'paid' && $request->payment_method !== 'credit') {
                 Payment::create([
                     'invoice_id' => $invoice->id,
-                    'amount' => $payAmount,
+                    'amount' => $request->amount_paid > 0 ? $request->amount_paid : $invoice->total_amount - $invoice->discount,
                     'payment_method' => $request->payment_method ?? 'cash',
                     'payment_date' => now()
+                ]);
+            }
+
+            // Auto-generate Service Reminder for 3 months later
+            if ($vehicle) {
+                \App\Models\ServiceReminder::create([
+                    'garage_id' => $garageId,
+                    'vehicle_id' => $vehicle->id,
+                    'service_type' => 'General Service / Follow-up',
+                    'due_date' => now()->addMonths(3),
+                    'status' => 'pending',
+                    'notes' => 'Auto-generated from POS invoice #' . $invoice->id
                 ]);
             }
 

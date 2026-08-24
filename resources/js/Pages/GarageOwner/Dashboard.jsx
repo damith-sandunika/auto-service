@@ -1,112 +1,383 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
-import { BriefcaseIcon, UsersIcon, CurrencyDollarIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { BriefcaseIcon, UsersIcon, CurrencyDollarIcon, CheckBadgeIcon, BuildingStorefrontIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import Modal from '@/Components/Modal';
+import { useState } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-export default function Dashboard() {
-    const stats = [
-        { name: 'Active Jobs', value: '8', icon: BriefcaseIcon, change: '+2 from yesterday', changeType: 'positive', bgColor: 'bg-blue-100', iconColor: 'text-blue-600', borderColor: 'border-blue-200' },
-        { name: 'Today Revenue', value: 'Rs. 45,000', icon: CurrencyDollarIcon, change: '+15% from last week', changeType: 'positive', bgColor: 'bg-emerald-100', iconColor: 'text-emerald-600', borderColor: 'border-emerald-200' },
-        { name: 'Available Staff', value: '5/7', icon: UsersIcon, change: '2 on leave', changeType: 'negative', bgColor: 'bg-indigo-100', iconColor: 'text-indigo-600', borderColor: 'border-indigo-200' },
-        { name: 'Avg. Turnaround', value: '3.5 Hrs', icon: ClockIcon, change: '-30m improved', changeType: 'positive', bgColor: 'bg-amber-100', iconColor: 'text-amber-600', borderColor: 'border-amber-200' },
-    ];
+export default function Dashboard({ stats, charts, recentJobs, shift, mechanics }) {
+    
+    const [isOpenShiftModalOpen, setIsOpenShiftModalOpen] = useState(false);
+    const [isCloseShiftModalOpen, setIsCloseShiftModalOpen] = useState(false);
+
+    const openShiftForm = useForm({
+        opening_cash: '',
+        attendance: mechanics ? mechanics.map(m => ({ user_id: m.id, name: m.name, status: 'present' })) : []
+    });
+
+    const submitOpenShift = (e) => {
+        e.preventDefault();
+        openShiftForm.post(route('owner.dashboard.open-shift'), {
+            onSuccess: () => {
+                setIsOpenShiftModalOpen(false);
+                openShiftForm.reset();
+            }
+        });
+    };
+
+    const closeShiftForm = useForm({});
+
+    const submitCloseShift = (e) => {
+        e.preventDefault();
+        closeShiftForm.post(route('owner.dashboard.close-shift'), {
+            onSuccess: () => setIsCloseShiftModalOpen(false)
+        });
+    };
+
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(price);
+    };
 
     return (
         <AuthenticatedLayout header={
-            <div className="flex justify-between items-center w-full">
-                <span>Dashboard Overview</span>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-extrabold transition-colors text-sm shadow-md shadow-blue-500/20">
-                    <span className="text-lg leading-none mb-0.5">+</span> Create New Job
-                </button>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-slide-up">
+                <div>
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">Dashboard</h2>
+                    <p className="text-[13px] font-bold text-slate-500 mt-1">Today's updates and key metrics</p>
+                </div>
+                {shift.active && (
+                    <div className="flex flex-row items-center gap-2 sm:gap-3 w-full md:w-auto justify-end mt-3 md:mt-0 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
+                        <div className="flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 bg-green-50 border border-green-200 rounded-xl h-9 sm:h-10 shadow-sm whitespace-nowrap">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                            </span>
+                            <span className="text-[10px] sm:text-xs font-bold text-green-700 tracking-wide uppercase">Shift Active</span>
+                        </div>
+                        <Link href={route('owner.pos.index')} className="flex items-center justify-center gap-1.5 px-3 sm:px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] sm:text-[13px] font-extrabold rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 h-9 sm:h-10 whitespace-nowrap">
+                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" d="M12 5v14M5 12h14" /></svg>
+                            New Job / POS
+                        </Link>
+                        <button onClick={() => setIsCloseShiftModalOpen(true)} className="flex items-center justify-center px-3 sm:px-5 py-2 bg-white text-slate-600 text-[11px] sm:text-[13px] font-bold border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-colors h-9 sm:h-10 shadow-sm whitespace-nowrap">
+                            Close Shift
+                        </button>
+                    </div>
+                )}
             </div>
         }>
             <Head title="Garage Owner Dashboard" />
 
-            <div className="max-w-7xl mx-auto space-y-8">
+            <div className="max-w-7xl mx-auto pb-12 px-4 sm:px-6 lg:px-8">
                 
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                    {stats.map((item) => (
-                        <div key={item.name} className={`relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm border border-slate-200 hover:border-blue-300 transition-all hover:shadow-md group`}>
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${item.bgColor} border ${item.borderColor} group-hover:scale-110 transition-transform`}>
-                                    <item.icon className={`h-6 w-6 ${item.iconColor}`} aria-hidden="true" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-extrabold text-slate-400 uppercase tracking-wider">{item.name}</p>
-                                    <h3 className="text-2xl font-black text-slate-800">{item.value}</h3>
-                                </div>
+                {!shift.active ? (
+                    <div className="flex justify-center py-10 px-4 animate-slide-up">
+                        <div className="bg-white/80 backdrop-blur-md rounded-3xl border border-slate-200 p-8 md:p-12 w-full max-w-lg text-center shadow-xl shadow-slate-200/50 mt-10">
+                            <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-6 ring-8 ring-blue-50/50">
+                                <BuildingStorefrontIcon className="w-8 h-8 text-blue-600" />
                             </div>
-                            <div className="flex items-center gap-2 pt-4 border-t border-slate-100">
-                                {item.changeType === 'positive' ? (
-                                    <span className="text-emerald-500 flex items-center">
-                                        <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                                    </span>
-                                ) : (
-                                    <span className="text-rose-500 flex items-center">
-                                        <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
-                                    </span>
+                            <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Shift is Closed</h3>
+                            <p className="text-[13px] font-medium text-slate-500 mb-8 leading-relaxed">Open the branch shift register with your starting cash to begin processing jobs today.</p>
+                            
+                            <form onSubmit={submitOpenShift}>
+                                <div className="text-left mb-5">
+                                    <label className="block text-[11px] font-extrabold text-slate-600 uppercase tracking-widest mb-2">Opening Cash (Rs.)</label>
+                                    <input 
+                                        type="number" 
+                                        step="0.01" 
+                                        required
+                                        min="0"
+                                        value={openShiftForm.data.opening_cash}
+                                        onChange={(e) => openShiftForm.setData('opening_cash', e.target.value)}
+                                        placeholder="e.g. 5000" 
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
+                                    />
+                                </div>
+
+                                {mechanics && mechanics.length > 0 && (
+                                    <div className="text-left mb-6">
+                                        <label className="block text-[11px] font-extrabold text-slate-600 uppercase tracking-widest mb-2">Staff Attendance</label>
+                                        <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                                            <table className="w-full text-left text-sm text-slate-600">
+                                                <tbody className="divide-y divide-slate-200">
+                                                    {openShiftForm.data.attendance.map((att, index) => (
+                                                        <tr key={att.user_id} className="hover:bg-slate-100/50">
+                                                            <td className="px-4 py-3 font-bold text-slate-800 text-xs">{att.name}</td>
+                                                            <td className="px-4 py-2 text-right">
+                                                                <select
+                                                                    className="text-xs rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1"
+                                                                    value={att.status}
+                                                                    onChange={(e) => {
+                                                                        const newAttendance = [...openShiftForm.data.attendance];
+                                                                        newAttendance[index].status = e.target.value;
+                                                                        openShiftForm.setData('attendance', newAttendance);
+                                                                    }}
+                                                                >
+                                                                    <option value="present">Present</option>
+                                                                    <option value="half_day">Half Day</option>
+                                                                    <option value="absent">Absent</option>
+                                                                    <option value="casual_leave">Casual Leave</option>
+                                                                    <option value="medical_leave">Medical Leave</option>
+                                                                    <option value="vacation_leave">Vacation Leave</option>
+                                                                </select>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 )}
-                                <span className="text-xs font-bold text-slate-500">{item.change}</span>
+
+                                <button 
+                                    type="submit" 
+                                    disabled={openShiftForm.processing}
+                                    className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-extrabold rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50"
+                                >
+                                    Open Shift Register
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-6 mt-6">
+                        {/* STAT CARDS */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                            {[
+                                { label: 'Active Jobs', value: stats.activeJobs, sub: 'Processing now', color: 'text-blue-600', bg: 'bg-blue-50', icon: BriefcaseIcon },
+                                { label: 'Completed Today', value: stats.completedJobsToday, sub: 'Delivered', color: 'text-emerald-500', bg: 'bg-emerald-50', icon: CheckBadgeIcon },
+                                { label: 'Cash on Drawer', value: formatPrice(shift.current_balance || 0), sub: 'Current', color: 'text-amber-500', bg: 'bg-amber-50', icon: CurrencyDollarIcon },
+                                { label: 'Total Revenue', value: formatPrice(stats.todayRevenue), sub: `Cash: ${formatPrice(shift.cash_sales || 0)} | Card: ${formatPrice(shift.card_sales || 0)}`, color: 'text-violet-600', bg: 'bg-violet-50', icon: CurrencyDollarIcon },
+                            ].map((card, index) => (
+                                <div key={card.label} className="bg-white/70 backdrop-blur-md rounded-2xl border border-slate-200/60 p-5 flex justify-between items-center shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all duration-300 animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
+                                    <div>
+                                        <p className="text-[9px] sm:text-[10.5px] font-extrabold text-slate-500 uppercase tracking-widest mb-1 leading-tight sm:leading-normal whitespace-normal">{card.label}</p>
+                                        <p className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight leading-none mb-1 sm:mb-2">{card.value}</p>
+                                        <p className={`inline-block px-1.5 sm:px-2.5 py-0.5 text-[8px] sm:text-[10px] font-bold ${card.color} ${card.bg} rounded-md uppercase tracking-wide leading-tight`}>{card.sub}</p>
+                                    </div>
+                                    <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-xl ${card.bg} flex items-center justify-center shrink-0`}>
+                                        <card.icon className={`w-4 h-4 sm:w-6 sm:h-6 ${card.color}`} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* MAIN GRID */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            
+                            {/* Recent Orders Table */}
+                            <div className="bg-white/70 backdrop-blur-md rounded-3xl border border-slate-200/60 shadow-sm overflow-hidden animate-slide-up flex flex-col">
+                                <div className="px-6 py-5 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50">
+                                    <div>
+                                        <h3 className="text-base font-black text-slate-900 tracking-tight">Recent Jobs</h3>
+                                        <p className="text-[12px] font-semibold text-slate-500">Currently processing</p>
+                                    </div>
+                                    <Link href={route('owner.orders.index')} className="flex items-center gap-2 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl transition-colors">
+                                        View All
+                                        <ArrowRightIcon className="w-3 h-3" />
+                                    </Link>
+                                </div>
+                                <div className="overflow-x-auto flex-1 p-0">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-slate-50 border-b border-slate-100">
+                                                <th className="px-4 py-3.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest whitespace-nowrap">Job</th>
+                                                <th className="px-4 py-3.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest whitespace-nowrap">Customer / Vehicle</th>
+                                                <th className="px-4 py-3.5 text-right"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-50/50">
+                                            {recentJobs.map((job) => {
+                                                return (
+                                                    <tr key={job.id} className="hover:bg-slate-50/50 transition-colors">
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <div className="text-[13px] font-black text-slate-800">JOB-{job.id}</div>
+                                                            <div className="text-[10px] font-bold text-slate-500 mt-0.5">{job.mechanic}</div>
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <div className="text-[13px] font-bold text-slate-700">{job.customer}</div>
+                                                            <div className="text-[11px] font-semibold text-slate-500 mt-0.5 bg-slate-100 inline-block px-1.5 rounded">{job.vehicle_number}</div>
+                                                        </td>
+                                                        <td className="px-4 py-3 whitespace-nowrap text-right">
+                                                            <Link href={route('owner.orders.index')} className="inline-block px-3 py-1.5 bg-white border border-slate-200 text-slate-600 hover:text-blue-700 hover:border-blue-200 hover:bg-blue-50 rounded-lg text-[11px] font-bold transition-all">
+                                                                View
+                                                            </Link>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                            {recentJobs.length === 0 && (
+                                                <tr>
+                                                    <td colSpan="5" className="px-6 py-10 text-center text-[13px] font-semibold text-slate-400">No active jobs</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Chart */}
+                            <div className="bg-white/70 backdrop-blur-md rounded-3xl border border-slate-200/60 shadow-sm p-6 flex flex-col animate-slide-up">
+                                <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+                                    <div>
+                                        <h3 className="text-base font-black text-slate-900 tracking-tight">Revenue Performance</h3>
+                                        <p className="text-[12px] font-semibold text-slate-500">7-Day Trend</p>
+                                    </div>
+                                </div>
+                                <div className="relative flex-1 min-h-[260px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={charts?.revenue || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(value) => `Rs.${value/1000}k`} />
+                                            <RechartsTooltip 
+                                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                                formatter={(value) => [formatPrice(value), 'Revenue']}
+                                            />
+                                            <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={4} dot={{ r: 4, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6, strokeWidth: 0, fill: '#10b981' }} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {/* Shift Register */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-xl shadow-slate-900/20 animate-slide-up">
+                                <div className="px-6 py-5 border-b border-slate-700/50 flex items-center gap-4 bg-slate-800/50">
+                                    <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+                                        <BuildingStorefrontIcon className="w-5 h-5 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-black text-white tracking-tight">Shift Register</h3>
+                                        <p className="text-[12px] font-medium text-slate-400">Current session metrics</p>
+                                    </div>
+                                </div>
+                                <div className="p-6 flex flex-col gap-0 divide-y divide-slate-800">
+                                    <div className="flex justify-between items-center py-4">
+                                        <span className="text-[13px] font-semibold text-slate-400">Opening Balance</span>
+                                        <span className="text-xl font-black text-white tracking-tight">Rs. {(shift.opening_cash || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-4">
+                                        <span className="text-[13px] font-semibold text-slate-400">Cash Sales</span>
+                                        <span className="text-[14px] font-bold text-emerald-400">+ Rs. {(shift.cash_sales || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-4">
+                                        <span className="text-[13px] font-semibold text-slate-400">Expenses Logged</span>
+                                        <span className="text-[14px] font-bold text-rose-400">- Rs. {(shift.expenses || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center py-4 bg-slate-800/30 px-3 rounded-xl mt-2">
+                                        <span className="text-[13px] font-semibold text-slate-300">Expected Drawer Balance</span>
+                                        <span className="text-[16px] font-black text-blue-400">Rs. {(shift.current_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-200 animate-slide-up">
+                                <div className="px-6 py-5 border-b border-slate-100 flex items-center gap-4 bg-slate-50/50">
+                                    <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
+                                        <UsersIcon className="w-5 h-5 text-violet-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-black text-slate-900 tracking-tight">Staff Attendance</h3>
+                                        <p className="text-[12px] font-medium text-slate-500">Manage shift check-ins</p>
+                                    </div>
+                                </div>
+                                <div className="p-0 overflow-y-auto max-h-[350px]">
+                                    <table className="w-full text-left border-collapse">
+                                        <tbody className="divide-y divide-slate-50/50">
+                                            {mechanics?.map((mechanic) => {
+                                                const att = mechanic.attendance;
+                                                const isPresent = att && att.arrival_time && !att.departure_time;
+                                                const isOff = att && att.departure_time;
+                                                
+                                                return (
+                                                    <tr key={mechanic.id} className="hover:bg-slate-50/50 transition-colors">
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-[13px] font-black text-slate-800">{mechanic.name}</div>
+                                                            {att ? (
+                                                                <div className="text-[10px] font-bold text-slate-500 mt-0.5">
+                                                                    In: {att.arrival_time} {isOff && `| Out: ${att.departure_time}`}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-[10px] font-bold text-slate-400 mt-0.5">Not marked</div>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                            {isOff ? (
+                                                                <span className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-100">
+                                                                    Off Shift
+                                                                </span>
+                                                            ) : isPresent ? (
+                                                                <Link href={route('owner.dashboard.staff-out', mechanic.id)} method="post" as="button" preserveScroll className="inline-block px-3 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-[11px] font-bold transition-all">
+                                                                    Mark Off
+                                                                </Link>
+                                                            ) : (
+                                                                <Link href={route('owner.dashboard.staff-in', mechanic.id)} method="post" as="button" preserveScroll className="inline-block px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg text-[11px] font-bold transition-all">
+                                                                    Mark In
+                                                                </Link>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                            {(!mechanics || mechanics.length === 0) && (
+                                                <tr>
+                                                    <td colSpan="2" className="px-6 py-10 text-center text-[13px] font-semibold text-slate-400">No staff members found</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
-                    ))}
-                </div>
 
-                {/* Recent Jobs Table */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
-                                <BriefcaseIcon className="w-5 h-5" />
-                            </div>
-                            <h3 className="text-lg font-black text-slate-800">Recent Active Jobs</h3>
-                        </div>
-                        <button className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors bg-white border border-slate-200 px-4 py-2 rounded-lg hover:bg-slate-50 shadow-sm">
-                            View All Jobs
-                        </button>
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm text-slate-600">
-                            <thead className="bg-slate-50 border-b border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                <tr>
-                                    <th className="px-6 py-4">Vehicle</th>
-                                    <th className="px-6 py-4">Assigned To</th>
-                                    <th className="px-6 py-4 text-center">Status</th>
-                                    <th className="px-6 py-4 text-right">Est. Cost</th>
-                                    <th className="px-6 py-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {[1, 2, 3].map((job, index) => (
-                                    <tr key={job} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-slate-800 flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 font-black text-xs">
-                                                CAB
-                                            </div>
-                                            <div>
-                                                Toyota Prius
-                                                <div className="text-xs text-slate-500 font-medium">CAB 123{index}</div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-slate-600">Nimal Silva</td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className="px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 border border-amber-200">
-                                                In Progress
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-black text-slate-700">Rs. 12,500</td>
-                                        <td className="px-6 py-4 text-right">
-                                            <button className="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider">Manage</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
+                )}
+                
             </div>
+
+            {/* Close Shift Modal */}
+            <Modal show={isCloseShiftModalOpen} onClose={() => setIsCloseShiftModalOpen(false)} maxWidth="md">
+                <div className="p-6">
+                    <h2 className="text-2xl font-black text-slate-800 mb-2">End of Shift Report</h2>
+                    <p className="text-sm text-slate-500 mb-6">Review the cash drawer summary before closing the shift.</p>
+                    
+                    <div className="space-y-1 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-sm">
+                        <div className="flex justify-between py-2 border-b border-slate-200">
+                            <span className="font-bold text-slate-600">Opening Balance:</span>
+                            <span className="font-bold text-slate-800">Rs. {(shift?.opening_cash || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-slate-200">
+                            <span className="font-bold text-slate-600">Cash Sales Collected:</span>
+                            <span className="font-bold text-emerald-600">+ Rs. {(shift?.cash_sales || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-slate-200">
+                            <span className="font-bold text-slate-600">Expenses Logged:</span>
+                            <span className="font-bold text-rose-500">- Rs. {(shift?.expenses || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between py-3 mt-1 border-t border-slate-300">
+                            <span className="font-black text-indigo-900 text-base">Expected Cash Drawer:</span>
+                            <span className="font-black text-indigo-600 text-lg">Rs. {(shift?.current_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                    </div>
+
+                    <div className="mb-6 p-4 rounded-2xl bg-blue-50 border border-blue-100 text-sm flex justify-between">
+                        <span className="font-bold text-blue-800">Card Sales (Bank):</span>
+                        <span className="font-bold text-blue-600">Rs. {(shift?.card_sales || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                    </div>
+
+                    <form onSubmit={submitCloseShift} className="flex gap-3">
+                        <button type="button" onClick={() => setIsCloseShiftModalOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-colors">
+                            Keep Open
+                        </button>
+                        <button type="submit" disabled={closeShiftForm.processing} className="flex-[2] py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black transition-colors disabled:opacity-50">
+                            Confirm & Close Shift
+                        </button>
+                    </form>
+                </div>
+            </Modal>
+
         </AuthenticatedLayout>
     );
 }

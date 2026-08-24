@@ -158,14 +158,14 @@ export default function Settings({ garage, auth }) {
                                     {/* Header */}
                                     <div className="text-center" style={{ marginBottom: '12px' }}>
                                         {previewUrl ? (
-                                            <img src={previewUrl} alt="Logo" style={{ maxWidth: \`\${data.logo_size}px\`, height: 'auto', filter: 'grayscale(100%) contrast(1.2)', display: 'inline-block' }} />
+                                            <img src={previewUrl} alt="Logo" style={{ maxWidth: `${data.logo_size}px`, height: 'auto', filter: 'grayscale(100%) contrast(1.2)', display: 'inline-block' }} />
                                         ) : (
                                             <div className="text-xs text-gray-400 italic py-2">No Logo</div>
                                         )}
                                     </div>
                                     
                                     <div className="text-center" style={{ fontSize: '18px', letterSpacing: '-0.03em', fontWeight: 800, marginBottom: '2px' }}>
-                                        {data.name || 'GARAGE SAAS'}
+                                        {data.name || 'AUTO SERVICE'}
                                     </div>
                                     
                                     {data.tagline && (
@@ -235,7 +235,7 @@ export default function Settings({ garage, auth }) {
                                         Thank you! Drive safely
                                     </div>
                                     <div style={{ textAlign: 'center', fontSize: '12px', marginTop: '8px' }}>
-                                        Software by GarageSaaS
+                                        Powered by DSRZone
                                     </div>
 
                                     {/* Jagged bottom edge effect */}

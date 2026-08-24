@@ -40,6 +40,26 @@ class User extends Authenticatable
         return $this->hasMany(Job::class, 'assigned_mechanic_id');
     }
 
+    public function staffProfile()
+    {
+        return $this->hasOne(StaffProfile::class);
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(StaffAttendance::class);
+    }
+
+    public function payrolls()
+    {
+        return $this->hasMany(Payroll::class);
+    }
+
+    public function salaryAdvances()
+    {
+        return $this->hasMany(SalaryAdvance::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *

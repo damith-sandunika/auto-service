@@ -29,12 +29,12 @@ export default function PrintInvoice({ invoice }) {
                 {/* Header & Logo */}
                 <div className="text-center" style={{ marginBottom: '12px' }}>
                     {garage?.logo_path && (
-                        <img src={`/storage/${garage.logo_path}`} alt="Logo" style={{ maxWidth: \`\${garage.logo_size || 140}px\`, height: 'auto', filter: 'grayscale(100%) contrast(1.2)', display: 'inline-block' }} />
+                        <img src={`/storage/${garage.logo_path}`} alt="Logo" style={{ maxWidth: `${garage.logo_size || 140}px`, height: 'auto', filter: 'grayscale(100%) contrast(1.2)', display: 'inline-block' }} />
                     )}
                 </div>
                 
                 <div className="text-center" style={{ fontSize: '18px', letterSpacing: '-0.03em', fontWeight: 800, marginBottom: '2px' }}>
-                    {garage?.name || 'GARAGE SAAS'}
+                    {garage?.name || 'AUTO SERVICE'}
                 </div>
                 
                 {garage?.tagline && (
@@ -89,17 +89,41 @@ export default function PrintInvoice({ invoice }) {
                 <div style={{ borderTop: '1.5px dashed #000', margin: '8px 0' }}></div>
 
                 {/* Totals */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontWeight: 900, fontSize: '15px', borderTop: '2px solid #000', paddingTop: '6px', marginTop: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontWeight: 700, fontSize: '13px', borderTop: '2px solid #000', paddingTop: '6px', marginTop: '6px' }}>
+                    <span>Subtotal</span>
+                    <span>Rs.{(parseFloat(invoice.total_amount) + parseFloat(invoice.discount)).toFixed(2)}</span>
+                </div>
+                
+                {invoice.discount > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontWeight: 700, fontSize: '13px', color: '#666' }}>
+                        <span>Discount</span>
+                        <span>- Rs.{parseFloat(invoice.discount).toFixed(2)}</span>
+                    </div>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontWeight: 900, fontSize: '15px', borderTop: '1px solid #000', paddingTop: '4px', marginTop: '2px' }}>
                     <span>TOTAL</span>
                     <span>Rs.{parseFloat(invoice.total_amount).toFixed(2)}</span>
                 </div>
 
-                {payments.length > 0 && (
+                {payments.length > 0 ? (
                     <>
                         <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0', fontSize: '12px' }}>
-                            <span>Paid Amount</span>
+                            <span>Payment ({payments[0].payment_method.toUpperCase()})</span>
                             <span>Rs.{totalPaid.toFixed(2)}</span>
                         </div>
+                        {invoice.tendered_amount > 0 && (
+                            <>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0', fontSize: '12px' }}>
+                                    <span>Cash Tendered</span>
+                                    <span>Rs.{parseFloat(invoice.tendered_amount).toFixed(2)}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0', fontSize: '12px', fontWeight: 800 }}>
+                                    <span>Change</span>
+                                    <span>Rs.{parseFloat(invoice.balance_amount).toFixed(2)}</span>
+                                </div>
+                            </>
+                        )}
                         {balance > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0', fontSize: '12px', fontWeight: 800 }}>
                                 <span>Balance Due</span>
@@ -107,6 +131,11 @@ export default function PrintInvoice({ invoice }) {
                             </div>
                         )}
                     </>
+                ) : (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0', fontSize: '12px', fontWeight: 800 }}>
+                        <span>Balance Due</span>
+                        <span>Rs.{balance.toFixed(2)}</span>
+                    </div>
                 )}
 
                 <div style={{ textAlign: 'center', margin: '12px 0' }}>
@@ -121,7 +150,7 @@ export default function PrintInvoice({ invoice }) {
                     Thank you! Drive safely
                 </div>
                 <div style={{ textAlign: 'center', fontSize: '12px', marginTop: '8px' }}>
-                    Software by GarageSaaS
+                    Powered by DSRZone
                 </div>
 
                 {/* Jagged bottom edge effect (hidden in print) */}

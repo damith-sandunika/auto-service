@@ -25,6 +25,9 @@
         "@laravel/multiplex": "^0.4.1"
     },
     "dependencies": {
-        "@heroicons/react": "^2.2.0"
+        "@heroicons/react": "^2.2.0",
+        "dayjs": "^1.11.23",
+        "react-is": "^19.2.8",
+        "recharts": "^3.10.1"
     }
 }

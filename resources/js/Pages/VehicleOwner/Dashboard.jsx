@@ -24,7 +24,7 @@ export default function History() {
                                     Suzuki Swift - WP CBF 9090
                                 </h3>
                                 <p className="text-orange-100">
-                                    Complete service history and modifications. Powered by Garage SaaS.
+                                    Complete service history and modifications. Powered by DSRZone.
                                 </p>
                             </div>
                             <div className="hidden sm:block">

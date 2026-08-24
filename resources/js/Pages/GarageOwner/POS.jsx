@@ -44,6 +44,33 @@ export default function POS({ inventory, mechanics, customers }) {
     };
 
     // 2. Search vehicle logic
+    const [vehicleSearchFocused, setVehicleSearchFocused] = useState(false);
+    
+    const allVehiclesList = useMemo(() => {
+        let list = [];
+        customers.forEach(c => {
+            c.vehicles?.forEach(v => {
+                list.push({ ...v, customer: c });
+            });
+        });
+        return list;
+    }, [customers]);
+
+    const vehicleSuggestions = useMemo(() => {
+        if (!activeOrder.vehicle_number) return [];
+        const term = activeOrder.vehicle_number.toUpperCase();
+        return allVehiclesList.filter(v => v.vehicle_number.toUpperCase().includes(term)).slice(0, 5);
+    }, [activeOrder.vehicle_number, allVehiclesList]);
+
+    const selectVehicle = (veh) => {
+        updateActiveOrder({ 
+            vehicle_number: veh.vehicle_number, 
+            customer_name: veh.customer.name,
+            found_vehicle: veh
+        });
+        setVehicleSearchFocused(false);
+    };
+
     const handleVehicleChange = (val) => {
         const upperVal = val.toUpperCase();
         let foundCustomer = null;
@@ -152,13 +179,16 @@ export default function POS({ inventory, mechanics, customers }) {
     const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
     
     const { data, setData, transform } = useForm({
-        vehicle_number: '', customer_name: '', mechanic_id: '', items: [], payment_method: 'cash'
+        vehicle_number: '', customer_name: '', mechanic_id: '', items: [], payment_method: 'cash', discount: 0, tendered_amount: 0
     });
+
+    const totalDue = total - parseFloat(data.discount || 0);
+    const changeToReturn = parseFloat(data.tendered_amount || 0) - totalDue;
 
     transform((data) => ({
         ...data,
         payment_status: data.payment_method === 'credit' ? 'pending' : 'paid',
-        amount_paid: data.payment_method === 'credit' ? 0 : total
+        amount_paid: data.payment_method === 'cash' ? totalDue : (data.payment_method === 'credit' ? 0 : totalDue)
     }));
 
     const proceedToCheckout = () => {
@@ -167,13 +197,21 @@ export default function POS({ inventory, mechanics, customers }) {
             vehicle_number: activeOrder.vehicle_number,
             customer_name: activeOrder.customer_name,
             mechanic_id: activeOrder.mechanic_id,
-            items: activeOrder.items
+            items: activeOrder.items,
+            discount: 0,
+            tendered_amount: ''
         });
         setIsCheckoutOpen(true);
     };
 
     const submitCheckout = (e) => {
         e.preventDefault();
+        
+        if (data.payment_method === 'cash' && data.tendered_amount < totalDue) {
+            alert('Tendered amount is less than total due!');
+            return;
+        }
+
         setIsProcessingCheckout(true);
         
         axios.post(route('owner.pos.store'), {
@@ -183,7 +221,10 @@ export default function POS({ inventory, mechanics, customers }) {
             items: activeOrder.items,
             payment_status: data.payment_method === 'credit' ? 'pending' : 'paid',
             payment_method: data.payment_method,
-            amount_paid: data.payment_method === 'credit' ? 0 : total
+            amount_paid: data.payment_method === 'credit' ? 0 : totalDue,
+            discount: data.discount || 0,
+            tendered_amount: data.payment_method === 'cash' ? data.tendered_amount : 0,
+            balance_amount: data.payment_method === 'cash' ? changeToReturn : 0
         }).then(res => {
             setIsProcessingCheckout(false);
             setIsCheckoutOpen(false);
@@ -213,13 +254,36 @@ export default function POS({ inventory, mechanics, customers }) {
                                 <input 
                                     type="text"
                                     placeholder="e.g. CAB-1234"
-                                    className="w-full bg-slate-50 border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 font-mono text-xl uppercase focus:border-indigo-500 focus:ring-indigo-500 py-2.5 pl-4 pr-12 shadow-inner"
+                                    className="w-full bg-slate-50 border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 font-mono text-xl uppercase focus:border-indigo-500 focus:ring-indigo-500 py-2.5 pl-4 pr-12 shadow-inner relative z-10"
                                     value={activeOrder.vehicle_number}
                                     onChange={(e) => handleVehicleChange(e.target.value)}
+                                    onFocus={() => setVehicleSearchFocused(true)}
+                                    onBlur={() => setTimeout(() => setVehicleSearchFocused(false), 200)}
                                 />
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10">
                                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                                 </div>
+                                
+                                {vehicleSearchFocused && vehicleSuggestions.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden">
+                                        {vehicleSuggestions.map((veh, idx) => (
+                                            <button 
+                                                key={idx}
+                                                type="button"
+                                                onClick={() => selectVehicle(veh)}
+                                                className="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-slate-100 last:border-0 transition-colors flex justify-between items-center"
+                                            >
+                                                <div>
+                                                    <div className="font-mono font-black text-slate-800">{veh.vehicle_number}</div>
+                                                    <div className="text-xs font-bold text-slate-500">{veh.make} {veh.model}</div>
+                                                </div>
+                                                <div className="text-xs font-bold text-slate-400">
+                                                    {veh.customer.name}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -464,38 +528,83 @@ export default function POS({ inventory, mechanics, customers }) {
                     <h2 className="text-2xl font-black text-slate-800 mb-6">Payment Checkout</h2>
                     <form onSubmit={submitCheckout} className="space-y-5">
                         
-                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 mb-6">
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-6">
                             <div className="flex justify-between items-center mb-2 text-sm text-slate-600">
                                 <span>Vehicle:</span>
-                                <span className="font-bold text-slate-800">{activeOrder.vehicle_number}</span>
+                                <span className="font-bold text-slate-800 bg-white px-2 py-1 border border-slate-200 rounded uppercase">{activeOrder.vehicle_number}</span>
                             </div>
-                            <div className="flex justify-between items-center text-lg font-black text-indigo-600 border-t border-slate-200 pt-2 mt-2">
-                                <span>Total Due:</span>
+                            <div className="flex justify-between items-center text-sm font-bold text-slate-700 mb-3">
+                                <span>Subtotal:</span>
                                 <span>{formatPrice(total)}</span>
+                            </div>
+                            
+                            {/* Discount Input */}
+                            <div className="flex items-center gap-3 mb-4">
+                                <label className="text-sm font-bold text-slate-600 flex-1">Discount (Rs.):</label>
+                                <input 
+                                    type="number"
+                                    min="0"
+                                    max={total}
+                                    step="0.01"
+                                    className="w-32 bg-white border-slate-300 rounded-lg text-right font-bold focus:ring-emerald-500 focus:border-emerald-500 py-1.5"
+                                    value={data.discount}
+                                    onChange={(e) => setData('discount', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex justify-between items-center text-xl font-black text-indigo-700 border-t border-slate-200 pt-3">
+                                <span>Total Due:</span>
+                                <span>Rs. {totalDue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">Payment Status</label>
+                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">Payment Method</label>
                             <div className="grid grid-cols-3 gap-3">
-                                <button type="button" onClick={() => setData('payment_method', 'cash')} className={`py-3 rounded-xl font-bold border-2 transition-all ${data.payment_method === 'cash' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}>
+                                <button type="button" onClick={() => setData('payment_method', 'cash')} className={`py-3 rounded-xl font-bold border-2 transition-all flex flex-col items-center justify-center gap-1 ${data.payment_method === 'cash' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}>
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                                     Cash
                                 </button>
-                                <button type="button" onClick={() => setData('payment_method', 'card')} className={`py-3 rounded-xl font-bold border-2 transition-all ${data.payment_method === 'card' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}>
+                                <button type="button" onClick={() => setData('payment_method', 'card')} className={`py-3 rounded-xl font-bold border-2 transition-all flex flex-col items-center justify-center gap-1 ${data.payment_method === 'card' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}>
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                                     Card
                                 </button>
-                                <button type="button" onClick={() => setData('payment_method', 'credit')} className={`py-3 rounded-xl font-bold border-2 transition-all ${data.payment_method === 'credit' ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}>
+                                <button type="button" onClick={() => setData('payment_method', 'credit')} className={`py-3 rounded-xl font-bold border-2 transition-all flex flex-col items-center justify-center gap-1 ${data.payment_method === 'credit' ? 'border-amber-500 bg-amber-50 text-amber-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}>
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     Credit
                                 </button>
                             </div>
                         </div>
 
+                        {data.payment_method === 'cash' && (
+                            <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-200 mt-5">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <label className="text-sm font-bold text-emerald-800 flex-1">Tendered Cash (Rs.):</label>
+                                    <input 
+                                        type="number"
+                                        min={totalDue}
+                                        step="0.01"
+                                        required
+                                        autoFocus
+                                        className="w-32 bg-white border-emerald-300 rounded-lg text-right font-black text-lg focus:ring-emerald-500 focus:border-emerald-500 py-2 shadow-inner"
+                                        value={data.tendered_amount}
+                                        onChange={(e) => setData('tendered_amount', e.target.value)}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                <div className="flex justify-between items-center text-lg font-black text-emerald-700 border-t border-emerald-200 pt-3">
+                                    <span>Balance (Change):</span>
+                                    <span>Rs. {changeToReturn > 0 ? changeToReturn.toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}</span>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="mt-8 flex gap-3">
                             <button type="button" onClick={() => setIsCheckoutOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-colors">
                                 Cancel
                             </button>
-                            <button type="submit" disabled={isProcessingCheckout} className="flex-[2] py-3 bg-slate-900 text-white rounded-xl font-black hover:bg-slate-800 transition-colors disabled:opacity-50 flex justify-center items-center gap-2">
-                                {isProcessingCheckout ? 'Processing...' : 'Complete Transaction'}
+                            <button type="submit" disabled={isProcessingCheckout || (data.payment_method === 'cash' && data.tendered_amount < totalDue)} className="flex-[2] py-3 bg-slate-900 text-white rounded-xl font-black hover:bg-slate-800 transition-colors disabled:opacity-50 flex justify-center items-center gap-2 shadow-lg shadow-slate-900/20">
+                                {isProcessingCheckout ? 'Processing...' : 'Complete Checkout'}
                             </button>
                         </div>
                     </form>
