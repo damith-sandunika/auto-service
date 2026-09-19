@@ -3,14 +3,20 @@ import { Head, Link } from '@inertiajs/react';
 
 export default function Show({ customer }) {
     return (
-        <AuthenticatedLayout header={
-            <div className="flex justify-between items-center w-full">
-                <span>{customer.name} - Vehicle History</span>
-                <Link href={route('owner.customers.index')} className="text-sm bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-lg font-bold hover:bg-slate-50 transition-colors">
-                    Back to Customers
-                </Link>
-            </div>
-        }>
+        <AuthenticatedLayout 
+            header={
+                <div className="text-left w-full">
+                    <h2 className="text-xl font-black text-black">{customer.name} - Vehicle History</h2>
+                </div>
+            }
+            headerActions={
+                <div className="w-full sm:w-auto flex justify-end">
+                    <Link href={route('owner.customers.index')} className="text-sm bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-lg font-bold hover:bg-slate-50 transition-colors whitespace-nowrap">
+                        Back to Customers
+                    </Link>
+                </div>
+            }
+        >
             <Head title={`History - ${customer.name}`} />
             
             <div className="max-w-7xl mx-auto py-12 px-4 space-y-8">

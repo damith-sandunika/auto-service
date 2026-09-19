@@ -3,10 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\BelongsToGarage;
 
 class Invoice extends Model
 {
-    protected $fillable = ['garage_id', 'job_id', 'total_amount', 'status'];
+    use HasFactory, BelongsToGarage;
+
+    protected $fillable = ['garage_id', 'job_id', 'invoice_number', 'total_amount', 'status'];
 
     public function job()
     {

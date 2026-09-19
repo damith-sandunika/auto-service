@@ -14,7 +14,7 @@ class ServiceCatalogController extends Controller
     public function index()
     {
         $garageId = Auth::user()->garage_id;
-        $services = ServiceCatalog::where('garage_id', $garageId)->get();
+        $services = ServiceCatalog::where('garage_id', $garageId)->paginate(20);
 
         return Inertia::render('GarageOwner/Services', [
             'services' => $services

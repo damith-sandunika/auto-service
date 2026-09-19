@@ -1,6 +1,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { ArrowLeftIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import Pagination from '@/Components/Pagination';
+import PageHeader from '@/Components/PageHeader';
 
 export default function PayrollIndex({ staff, selectedMonth }) {
     const { post, processing } = useForm({});
@@ -29,31 +31,39 @@ export default function PayrollIndex({ staff, selectedMonth }) {
     };
 
     return (
-        <AuthenticatedLayout
-            header={<h2 className="font-semibold text-xl text-slate-800 leading-tight">Payroll Processing</h2>}
+        <AuthenticatedLayout 
+            fullWidth={true}
+            header={
+                <div className="text-left w-full flex items-center gap-3">
+                    <Link href={route('owner.hr.index')} className="text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 hover:bg-slate-200 p-1.5 rounded-lg">
+                        <ArrowLeftIcon className="w-4 h-4" />
+                    </Link>
+                    <div>
+                        <h2 className="text-xl font-black text-black">Payroll Processing</h2>
+                        <p className="text-xs font-bold text-blue-600 mt-1">Calculate and process staff salaries</p>
+                    </div>
+                </div>
+            }
+            headerActions={
+                <div className="w-full sm:w-auto flex justify-end">
+                    <div className="flex items-center gap-3 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                        <h3 className="text-xs font-black text-slate-600 uppercase tracking-wider ml-2 whitespace-nowrap">Process Month:</h3>
+                        <input 
+                            type="month" 
+                            value={selectedMonth} 
+                            onChange={handleMonthChange}
+                            className="rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm font-bold text-slate-800 py-1.5 w-full sm:w-auto"
+                        />
+                    </div>
+                </div>
+            }
         >
             <Head title="Payroll" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    
-                    <div className="mb-6 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                        <div className="flex items-center">
-                            <Link href={route('owner.hr.index')} className="text-slate-500 hover:text-slate-700 mr-4">
-                                <ArrowLeftIcon className="h-5 w-5" />
-                            </Link>
-                            <h3 className="text-lg font-bold text-slate-700">Process Salary for:</h3>
-                            <input 
-                                type="month" 
-                                value={selectedMonth} 
-                                onChange={handleMonthChange}
-                                className="ml-3 rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                            />
-                        </div>
-                    </div>
+            <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6 space-y-6">
 
                     <div className="space-y-4">
-                        {staff.map(mechanic => (
+                        {staff.data && staff.data.map(mechanic => (
                             <div key={mechanic.id} className="bg-white overflow-hidden shadow-sm sm:rounded-xl border border-slate-100 p-6 flex flex-col md:flex-row md:items-center justify-between hover:shadow-md transition-shadow">
                                 <div className="mb-4 md:mb-0">
                                     <h4 className="font-bold text-slate-800 text-lg">{mechanic.name}</h4>
@@ -105,14 +115,14 @@ export default function PayrollIndex({ staff, selectedMonth }) {
                             </div>
                         ))}
 
-                        {staff.length === 0 && (
+                        {(!staff.data || staff.data.length === 0) && (
                             <div className="text-center py-12 text-slate-500">
                                 No staff members found.
                             </div>
                         )}
+                        {staff.links && <Pagination links={staff.links} />}
                     </div>
                 </div>
-            </div>
         </AuthenticatedLayout>
     );
 }

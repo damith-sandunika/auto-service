@@ -3,7 +3,11 @@ import { Head, Link } from '@inertiajs/react';
 
 export default function Index({ customers }) {
     return (
-        <AuthenticatedLayout header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Customers CRM</h2>}>
+        <AuthenticatedLayout header={
+            <div className="text-left w-full">
+                <h2 className="font-semibold text-xl text-gray-800 leading-tight">Customers CRM</h2>
+            </div>
+        }>
             <Head title="Customers" />
             <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">

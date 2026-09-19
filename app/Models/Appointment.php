@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToGarage;
+
 use Illuminate\Database\Eloquent\Model;
 
 class Appointment extends Model
 {
+    use BelongsToGarage;
     protected $fillable = [
         'garage_id',
         'customer_id',

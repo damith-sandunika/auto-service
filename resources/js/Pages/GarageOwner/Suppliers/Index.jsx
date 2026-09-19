@@ -2,8 +2,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import Modal from '@/Components/Modal';
-import InputError from '@/Components/InputError';
 import { UserGroupIcon, PlusIcon, BanknotesIcon, TrashIcon } from '@heroicons/react/24/outline';
+import Pagination from '@/Components/Pagination';
 
 export default function SuppliersIndex({ suppliers }) {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -49,9 +49,10 @@ export default function SuppliersIndex({ suppliers }) {
                 </div>
 
                 {/* Suppliers Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {suppliers.map(supplier => (
-                        <div key={supplier.id} className="bg-white rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 relative overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all">
+                <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {suppliers.data && suppliers.data.map(supplier => (
+                            <div key={supplier.id} className="bg-white rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 relative overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all">
                             {/* Decorative Accent */}
                             <div className={`absolute top-0 right-0 w-24 h-24 rounded-bl-full -mr-4 -mt-4 opacity-10 transition-transform group-hover:scale-110 ${supplier.balance_due > 0 ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
 
@@ -91,13 +92,15 @@ export default function SuppliersIndex({ suppliers }) {
                         </div>
                     ))}
 
-                    {suppliers.length === 0 && (
-                        <div className="col-span-full py-12 text-center bg-white border border-slate-100 rounded-3xl border-dashed">
-                            <UserGroupIcon className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                            <h3 className="text-lg font-bold text-slate-700">No Suppliers Yet</h3>
-                            <p className="text-sm text-slate-500 mt-1">Add your first supplier to start tracking purchases and payables.</p>
-                        </div>
-                    )}
+                        {(!suppliers.data || suppliers.data.length === 0) && (
+                            <div className="col-span-full py-12 text-center bg-white border border-slate-100 rounded-3xl border-dashed">
+                                <UserGroupIcon className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                <h3 className="text-lg font-bold text-slate-700">No Suppliers Yet</h3>
+                                <p className="text-sm text-slate-500 mt-1">Add your first supplier to start tracking purchases and payables.</p>
+                            </div>
+                        )}
+                    </div>
+                    {suppliers.links && <Pagination links={suppliers.links} />}
                 </div>
             </div>
 

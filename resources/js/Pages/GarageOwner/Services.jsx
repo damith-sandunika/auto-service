@@ -5,6 +5,7 @@ import Modal from '@/Components/Modal';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
+import Pagination from '@/Components/Pagination';
 
 export default function Services({ services }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -75,21 +76,28 @@ export default function Services({ services }) {
     };
 
     return (
-        <AuthenticatedLayout header={
-            <div className="flex justify-between items-center w-full">
-                <span>Services Catalog</span>
-                <button onClick={openCreateModal} className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl font-extrabold transition-colors text-sm shadow-md shadow-teal-500/20">
-                    <span className="text-lg leading-none mb-0.5">+</span> Add Service
-                </button>
-            </div>
-        }>
+        <AuthenticatedLayout 
+            header={
+                <div className="text-left w-full">
+                    <h2 className="text-xl font-black text-black">Services Catalog</h2>
+                </div>
+            }
+            headerActions={
+                <div className="w-full sm:w-auto flex justify-end">
+                    <button onClick={openCreateModal} className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-xl font-extrabold transition-colors text-sm shadow-md shadow-teal-500/20 whitespace-nowrap">
+                        <span className="text-lg leading-none mb-0.5">+</span> Add Service
+                    </button>
+                </div>
+            }
+        >
             <Head title="Services" />
 
             <div className="max-w-7xl mx-auto space-y-6">
 
-                {services && services.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {services.map((svc) => (
+                {services && services.data && services.data.length > 0 ? (
+                    <div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {services.data.map((svc) => (
                             <div key={svc.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 hover:shadow-md hover:border-teal-300 transition-all group flex flex-col">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center group-hover:bg-teal-100 transition-colors border border-teal-100">
@@ -112,6 +120,8 @@ export default function Services({ services }) {
                                 </div>
                             </div>
                         ))}
+                        </div>
+                        {services.links && <Pagination links={services.links} />}
                     </div>
                 ) : (
                     <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm">

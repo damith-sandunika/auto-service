@@ -24,7 +24,7 @@ class SupplierController extends Controller
         $suppliers = Supplier::where('garage_id', $garage->id)
             ->withCount('purchaseOrders')
             ->orderBy('name')
-            ->get();
+            ->paginate(20);
 
         return Inertia::render('GarageOwner/Suppliers/Index', [
             'suppliers' => $suppliers
@@ -111,13 +111,27 @@ class SupplierController extends Controller
             $supplier->decrement('balance_due', $request->amount);
 
             // 3. Record Expense
-            Expense::create([
+            $expense = Expense::create([
                 'garage_id' => $garage->id,
                 'category' => 'Supplier Payment',
                 'amount' => $request->amount,
                 'expense_date' => $request->payment_date,
                 'description' => "Payment to {$supplier->name} via " . ucfirst($request->payment_method) . ($request->reference_no ? " (Ref: {$request->reference_no})" : "")
             ]);
+
+            // 4. Log in Cashbook (Only if it's not a pending cheque, or if you want to record it immediately as cash out)
+            if ($request->payment_method !== 'cheque') {
+                \App\Models\CashbookTransaction::create([
+                    'garage_id' => $garage->id,
+                    'bank_account_id' => null, // Assuming cash out or default bank out
+                    'type' => 'out',
+                    'amount' => $request->amount,
+                    'reference_type' => 'expense',
+                    'reference_id' => $expense->id,
+                    'description' => $expense->description,
+                    'date' => $request->payment_date,
+                ]);
+            }
         });
 
         return redirect()->back()->with('success', 'Payment recorded successfully.');
@@ -133,7 +147,10 @@ class SupplierController extends Controller
             return redirect()->back()->with('error', 'Not a cheque payment.');
         }
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($payment, $request, $oldStatus) {
+        $oldStatus = $payment->cheque_status;
+        $garage = $this->getGarage();
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($payment, $request, $oldStatus, $garage) {
             $payment->update(['cheque_status' => $request->cheque_status]);
 
             // If it bounced, we need to add the amount back to the supplier balance_due
@@ -141,6 +158,19 @@ class SupplierController extends Controller
                 $payment->supplier->increment('balance_due', $payment->amount);
             } elseif ($oldStatus === 'bounced' && $request->cheque_status === 'cleared') {
                 $payment->supplier->decrement('balance_due', $payment->amount);
+            }
+
+            // Log Cashbook Transaction when cleared
+            if ($oldStatus !== 'cleared' && $request->cheque_status === 'cleared') {
+                \App\Models\CashbookTransaction::create([
+                    'garage_id' => $garage->id,
+                    'bank_account_id' => null, // Would ideally select the bank, but using null for default
+                    'type' => 'out',
+                    'amount' => $payment->amount,
+                    'reference_type' => 'manual',
+                    'description' => "Cheque Cleared for {$payment->supplier->name}" . ($payment->reference_no ? " (Ref: {$payment->reference_no})" : ""),
+                    'date' => now()->toDateString(),
+                ]);
             }
         });
 

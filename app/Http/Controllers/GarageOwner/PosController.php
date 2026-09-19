@@ -126,10 +126,13 @@ class PosController extends Controller
                 }
             }
 
+            $invoiceNumber = 'INV-' . \App\Services\SequenceGenerator::getNextNumber($garageId, 'invoice');
+
             // Create Invoice
             $invoice = Invoice::create([
                 'garage_id' => $garageId,
                 'job_id' => $job->id,
+                'invoice_number' => $invoiceNumber,
                 'total_amount' => collect($request->items)->sum(function($item) { return $item['price'] * $item['quantity']; }), // Subtotal
                 'discount' => $request->discount ?? 0,
                 'tendered_amount' => $request->tendered_amount ?? 0,
@@ -139,11 +142,25 @@ class PosController extends Controller
 
             // Add Payment if provided and not credit
             if ($request->payment_status === 'paid' && $request->payment_method !== 'credit') {
+                $paymentAmount = $request->amount_paid > 0 ? $request->amount_paid : ($invoice->total_amount - $invoice->discount);
+                
                 Payment::create([
                     'invoice_id' => $invoice->id,
-                    'amount' => $request->amount_paid > 0 ? $request->amount_paid : $invoice->total_amount - $invoice->discount,
+                    'amount' => $paymentAmount,
                     'payment_method' => $request->payment_method ?? 'cash',
                     'payment_date' => now()
+                ]);
+
+                // Log in Cashbook
+                \App\Models\CashbookTransaction::create([
+                    'garage_id' => $garageId,
+                    'bank_account_id' => null,
+                    'type' => 'in',
+                    'amount' => $paymentAmount,
+                    'reference_type' => 'invoice',
+                    'reference_id' => $invoice->id,
+                    'description' => 'Payment for POS Invoice #' . $invoice->id . ' (' . ($request->payment_method ?? 'cash') . ')',
+                    'date' => now()->toDateString(),
                 ]);
             }
 

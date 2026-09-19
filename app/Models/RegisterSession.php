@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToGarage;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class RegisterSession extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToGarage;
 
     protected $fillable = [
         'garage_id',

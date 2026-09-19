@@ -21,7 +21,7 @@ class HRController extends Controller
                 $q->whereMonth('date', now()->month)
                   ->whereYear('date', now()->year);
             }])
-            ->get();
+            ->paginate(20);
 
         return Inertia::render('GarageOwner/HR/Index', [
             'staff' => $staff
@@ -128,12 +128,22 @@ class HRController extends Controller
             'reason' => 'nullable|string'
         ]);
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($staffUser, $validated) {
-            $staffUser->salaryAdvances()->create([
+        \Illuminate\Support\Facades\DB::transaction(function () use ($staffUser, $validated, $garageId) {
+            $advance = $staffUser->salaryAdvances()->create([
                 'amount' => $validated['amount'],
                 'date' => $validated['date'],
                 'reason' => $validated['reason'],
                 'status' => 'pending'
+            ]);
+
+            \App\Models\CashbookTransaction::create([
+                'garage_id' => $garageId,
+                'bank_account_id' => null,
+                'type' => 'out',
+                'amount' => $validated['amount'],
+                'reference_type' => 'manual',
+                'description' => 'Salary Advance: ' . $staffUser->name . ($validated['reason'] ? ' - ' . $validated['reason'] : ''),
+                'date' => $validated['date'],
             ]);
         });
 

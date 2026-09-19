@@ -16,8 +16,8 @@ class OrderController extends Controller
     {
         $garageId = Auth::user()->garage_id;
         
-        $invoices = Invoice::with(['job.vehicle', 'payments'])->where('garage_id', $garageId)->latest()->get();
-        $jobs = Job::with('vehicle')->where('garage_id', $garageId)->latest()->get();
+        $invoices = Invoice::with(['job.vehicle', 'payments'])->where('garage_id', $garageId)->latest()->paginate(20, ['*'], 'invoices_page');
+        $jobs = Job::with('vehicle')->where('garage_id', $garageId)->latest()->paginate(20, ['*'], 'jobs_page');
 
         return Inertia::render('GarageOwner/Orders', [
             'invoices' => $invoices,
@@ -25,7 +25,7 @@ class OrderController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, \App\Actions\Orders\CreateOrderAction $createOrderAction)
     {
         $validated = $request->validate([
             'job_id' => 'required|exists:service_jobs,id',
@@ -33,11 +33,8 @@ class OrderController extends Controller
             'status' => 'required|in:pending,paid',
         ]);
 
-        $validated['garage_id'] = Auth::user()->garage_id;
+        $createOrderAction->execute($validated, Auth::user()->garage_id);
         
-        \Illuminate\Support\Facades\DB::transaction(function () use ($validated) {
-            Invoice::create($validated);
-        });
         return redirect()->back()->with('success', 'Invoice created successfully.');
     }
 
@@ -72,7 +69,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Invoice deleted successfully.');
     }
 
-    public function addPayment(Request $request, string $id)
+    public function addPayment(Request $request, string $id, \App\Actions\Orders\ProcessPaymentAction $processPaymentAction)
     {
         $invoice = Invoice::where('garage_id', Auth::user()->garage_id)->findOrFail($id);
 
@@ -82,14 +79,7 @@ class OrderController extends Controller
             'payment_date' => 'required|date',
         ]);
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($invoice, $validated) {
-            $invoice->payments()->create($validated);
-
-            $totalPaid = $invoice->payments()->sum('amount');
-            if ($totalPaid >= $invoice->total_amount) {
-                $invoice->update(['status' => 'paid']);
-            }
-        });
+        $processPaymentAction->execute($invoice, $validated);
 
         return redirect()->back()->with('success', 'Payment added successfully.');
     }

@@ -72,14 +72,20 @@ export default function Staff({ staff }) {
     };
 
     return (
-        <AuthenticatedLayout header={
-            <div className="flex justify-between items-center w-full">
-                <span>Staff Management</span>
-                <button onClick={openCreateModal} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-extrabold transition-colors text-sm shadow-md shadow-blue-500/20">
-                    <span className="text-lg leading-none mb-0.5">+</span> Add New Staff
-                </button>
-            </div>
-        }>
+        <AuthenticatedLayout 
+            header={
+                <div className="text-left w-full">
+                    <h2 className="text-xl font-black text-black">Staff Management</h2>
+                </div>
+            }
+            headerActions={
+                <div className="w-full sm:w-auto flex justify-end">
+                    <button onClick={openCreateModal} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-extrabold transition-colors text-sm shadow-md shadow-blue-500/20 whitespace-nowrap">
+                        <span className="text-lg leading-none mb-0.5">+</span> Add New Staff
+                    </button>
+                </div>
+            }
+        >
             <Head title="Staff Members" />
 
             <div className="max-w-7xl mx-auto space-y-6">

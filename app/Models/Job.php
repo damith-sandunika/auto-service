@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToGarage;
 
 class Job extends Model
 {
-    //
+    use BelongsToGarage;
+
     protected $table = 'service_jobs';
 
     protected $fillable = ['garage_id', 'vehicle_id', 'assigned_mechanic_id', 'status', 'description', 'total_cost'];

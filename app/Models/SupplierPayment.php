@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToGarage;
+
 use Illuminate\Database\Eloquent\Model;
 
 class SupplierPayment extends Model
 {
+    use BelongsToGarage;
     protected $fillable = [
         'garage_id', 'supplier_id', 'purchase_order_id', 'amount', 'payment_method', 'reference_no', 'payment_date', 'cheque_due_date', 'cheque_status'
     ];

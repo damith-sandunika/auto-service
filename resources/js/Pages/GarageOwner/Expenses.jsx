@@ -5,6 +5,8 @@ import Modal from '@/Components/Modal';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
+import PageHeader from '@/Components/PageHeader';
+import DataTable from '@/Components/DataTable';
 
 export default function Expenses({ expenses }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,44 +36,45 @@ export default function Expenses({ expenses }) {
     };
 
     return (
-        <AuthenticatedLayout header={
-            <div className="flex justify-between items-center w-full">
-                <span>Expenses Management</span>
-                <button onClick={openModal} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-extrabold transition-colors text-sm shadow-md">
-                    + Add Expense
-                </button>
-            </div>
-        }>
-            <Head title="Expenses" />
-            <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
-                    <table className="w-full text-left text-sm text-slate-600 min-w-[600px]">
-                        <thead className="bg-slate-50 border-b border-slate-200">
-                            <tr>
-                                <th className="px-6 py-4 font-bold text-slate-500 uppercase">Date</th>
-                                <th className="px-6 py-4 font-bold text-slate-500 uppercase">Category</th>
-                                <th className="px-6 py-4 font-bold text-slate-500 uppercase">Description</th>
-                                <th className="px-6 py-4 font-bold text-slate-500 uppercase text-right">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {expenses && expenses.length > 0 ? expenses.map((exp) => (
-                                <tr key={exp.id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-6 py-4 font-bold text-slate-800">{new Date(exp.expense_date).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 font-bold text-indigo-600 uppercase tracking-wider text-xs">{exp.category}</td>
-                                    <td className="px-6 py-4 text-slate-500">{exp.description || '-'}</td>
-                                    <td className="px-6 py-4 text-right font-black text-red-500">
-                                        - Rs. {parseFloat(exp.amount).toFixed(2)}
-                                    </td>
-                                </tr>
-                            )) : (
-                                <tr>
-                                    <td colSpan="4" className="px-6 py-8 text-center text-slate-500 font-medium">No expenses found.</td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+        <AuthenticatedLayout 
+            fullWidth={true}
+            header={
+                <div className="text-left w-full">
+                    <h2 className="text-xl font-black text-black">Expenses Management</h2>
+                    <p className="text-xs font-bold text-blue-600 mt-1">Track your daily garage expenses</p>
                 </div>
+            }
+            headerActions={
+                <div className="w-full sm:w-auto flex justify-end">
+                    <button onClick={openModal} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-black transition-all text-xs shadow-sm shadow-blue-500/20 whitespace-nowrap">
+                        <span className="text-base leading-none mb-0.5 mr-1">+</span> Add Expense
+                    </button>
+                </div>
+            }
+        >
+            <Head title="Expenses" />
+            <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6">
+                <DataTable 
+                    columns={[
+                        { label: 'Date' },
+                        { label: 'Category' },
+                        { label: 'Description' },
+                        { label: 'Amount', align: 'right' },
+                    ]}
+                    isEmpty={!expenses || expenses.length === 0}
+                    emptyMessage="No expenses found."
+                >
+                    {expenses?.map((exp) => (
+                        <tr key={exp.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 font-bold text-slate-800">{new Date(exp.expense_date).toLocaleDateString()}</td>
+                            <td className="px-6 py-4 font-bold text-indigo-600 uppercase tracking-wider text-xs">{exp.category}</td>
+                            <td className="px-6 py-4 text-slate-500">{exp.description || '-'}</td>
+                            <td className="px-6 py-4 text-right font-black text-red-500">
+                                - Rs. {parseFloat(exp.amount).toFixed(2)}
+                            </td>
+                        </tr>
+                    ))}
+                </DataTable>
             </div>
 
             <Modal show={isModalOpen} onClose={closeModal} maxWidth="md">

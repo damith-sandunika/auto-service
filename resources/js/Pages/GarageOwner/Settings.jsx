@@ -12,7 +12,7 @@ export default function Settings({ garage, auth }) {
         logo_size: garage?.logo_size || 140,
         logo: null
     });
-    
+
     const [previewUrl, setPreviewUrl] = useState(garage?.logo_path ? `/storage/${garage.logo_path}` : null);
     const [dragOver, setDragOver] = useState(false);
     const fileInputRef = useRef(null);
@@ -48,16 +48,25 @@ export default function Settings({ garage, auth }) {
     };
 
     return (
-        <AuthenticatedLayout header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">System Settings</h2>} fullWidth={true}>
-            <Head title="System Settings" />
-            
-            <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                <div className="flex flex-wrap justify-between items-start gap-3 mb-6">
-                    <div>
-                        <h2 className="text-2xl font-black text-slate-800">System Settings</h2>
-                        <p className="text-sm text-gray-500 mt-1">Configure garage details and thermal bill appearance.</p>
-                    </div>
+        <AuthenticatedLayout 
+            fullWidth={true}
+            header={
+                <div className="text-left w-full">
+                    <h2 className="text-xl font-black text-black">System Settings</h2>
+                    <p className="text-xs font-bold text-blue-600 mt-1">Configure garage details and thermal bill appearance.</p>
                 </div>
+            }
+            headerActions={
+                <div className="w-full sm:w-auto flex justify-end">
+                    <button type="button" onClick={submit} disabled={processing} className="px-5 py-2 bg-blue-600 text-white text-xs font-black rounded-lg hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/20 disabled:opacity-50 whitespace-nowrap">
+                        {processing ? 'Saving...' : 'Save Settings'}
+                    </button>
+                </div>
+            }
+        >
+            <Head title="System Settings" />
+
+            <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6">
 
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                     {/* Premium Horizontally Scrollable Tab Header */}
@@ -77,13 +86,13 @@ export default function Settings({ garage, auth }) {
                                     <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} required className="w-full text-sm border-gray-200 rounded-md focus:border-blue-500 focus:ring-blue-500" />
                                     <InputError message={errors.name} className="mt-1" />
                                 </div>
-                                
+
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Address</label>
                                     <input type="text" value={data.address} onChange={e => setData('address', e.target.value)} required className="w-full text-sm border-gray-200 rounded-md focus:border-blue-500 focus:ring-blue-500" />
                                     <InputError message={errors.address} className="mt-1" />
                                 </div>
-                                
+
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Telephone Number</label>
                                     <input type="text" value={data.phone} onChange={e => setData('phone', e.target.value)} required className="w-full text-sm border-gray-200 rounded-md focus:border-blue-500 focus:ring-blue-500" />
@@ -98,8 +107,8 @@ export default function Settings({ garage, auth }) {
 
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-700 uppercase mb-2">Thermal Bill Logo</label>
-                                    
-                                    <div 
+
+                                    <div
                                         onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                                         onDragLeave={() => setDragOver(false)}
                                         onDrop={handleDrop}
@@ -107,7 +116,7 @@ export default function Settings({ garage, auth }) {
                                         className={`relative flex flex-col items-center justify-center w-full h-36 border-2 rounded-xl cursor-pointer transition-colors group mb-4 ${dragOver ? 'border-blue-500 bg-blue-50' : 'border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
                                     >
                                         <input ref={fileInputRef} type="file" accept="image/png, image/jpeg, image/jpg" className="hidden" onChange={handleLogoChange} />
-                                        
+
                                         {!previewUrl ? (
                                             <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                                 <svg className="w-8 h-8 mb-3 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -131,30 +140,26 @@ export default function Settings({ garage, auth }) {
                                             <label className="block text-xs font-semibold text-gray-700 uppercase">Logo Size</label>
                                             <span className="text-xs font-bold text-blue-600">{data.logo_size}px</span>
                                         </div>
-                                        <input 
-                                            type="range" 
-                                            value={data.logo_size} 
-                                            onChange={e => setData('logo_size', e.target.value)} 
-                                            min="20" max="300" 
-                                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600" 
+                                        <input
+                                            type="range"
+                                            value={data.logo_size}
+                                            onChange={e => setData('logo_size', e.target.value)}
+                                            min="20" max="300"
+                                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                                         />
                                         <p className="text-[10px] text-gray-400 mt-1">Adjust to scale the logo appropriately on the thermal bill.</p>
                                     </div>
                                 </div>
-
-                                <button type="submit" disabled={processing} className="px-6 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50 mt-4">
-                                    {processing ? 'Saving...' : 'Save Settings'}
-                                </button>
                             </div>
 
                             {/* Thermal Bill Preview */}
                             <div className="flex-1 max-w-sm ml-0 lg:ml-12">
                                 <h4 className="text-xs font-bold text-gray-700 uppercase mb-3">Live Thermal Bill Preview</h4>
-                                
+
                                 <div className="bg-white mx-auto shadow-[0_10px_30px_rgba(0,0,0,0.1)] relative" style={{ width: '74mm', padding: '4mm 3mm', fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontSize: '12px', color: '#000', minHeight: '400px' }}>
                                     {/* Jagged top edge effect */}
                                     <div className="absolute top-0 left-0 right-0 h-2" style={{ backgroundImage: 'linear-gradient(135deg, transparent 50%, #fff 50%), linear-gradient(45deg, #fff 50%, transparent 50%)', backgroundSize: '8px 8px', backgroundPosition: '0 -4px', transform: 'rotate(180deg)', marginTop: '-8px' }}></div>
-                                    
+
                                     {/* Header */}
                                     <div className="text-center" style={{ marginBottom: '12px' }}>
                                         {previewUrl ? (
@@ -163,19 +168,19 @@ export default function Settings({ garage, auth }) {
                                             <div className="text-xs text-gray-400 italic py-2">No Logo</div>
                                         )}
                                     </div>
-                                    
+
                                     <div className="text-center" style={{ fontSize: '18px', letterSpacing: '-0.03em', fontWeight: 800, marginBottom: '2px' }}>
                                         {data.name || 'AUTO SERVICE'}
                                     </div>
-                                    
+
                                     {data.tagline && (
                                         <div className="text-center" style={{ fontSize: '10px', marginBottom: '2px' }}>{data.tagline}</div>
                                     )}
-                                    
+
                                     {data.phone && (
                                         <div className="text-center" style={{ fontSize: '10px' }}>📞 {data.phone}</div>
                                     )}
-                                    
+
                                     {data.address && (
                                         <div className="text-center" style={{ fontSize: '10px' }}>{data.address}</div>
                                     )}
@@ -230,7 +235,7 @@ export default function Settings({ garage, auth }) {
                                     </div>
 
                                     <div style={{ borderTop: '1.5px dashed #000', margin: '8px 0' }}></div>
-                                    
+
                                     <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '13px', marginTop: '8px' }}>
                                         Thank you! Drive safely
                                     </div>

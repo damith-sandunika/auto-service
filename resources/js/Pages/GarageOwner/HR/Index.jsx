@@ -3,7 +3,9 @@ import { Head, useForm, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import Modal from '@/Components/Modal';
 import InputError from '@/Components/InputError';
+import PageHeader from '@/Components/PageHeader';
 import { UserGroupIcon, CurrencyDollarIcon, ClockIcon, BriefcaseIcon } from '@heroicons/react/24/outline';
+import Pagination from '@/Components/Pagination';
 
 export default function HRIndex({ staff }) {
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -87,31 +89,34 @@ export default function HRIndex({ staff }) {
     };
 
     return (
-        <AuthenticatedLayout
-            header={<h2 className="font-semibold text-xl text-slate-800 leading-tight">HR & Staff Management</h2>}
+        <AuthenticatedLayout 
+            fullWidth={true}
+            header={
+                <div className="text-left w-full">
+                    <h2 className="text-xl font-black text-black">HR & Staff Management</h2>
+                    <p className="text-xs font-bold text-blue-600 mt-1">Manage staff profiles, roles, and attendance</p>
+                </div>
+            }
+            headerActions={
+                <div className="w-full sm:w-auto flex justify-end gap-3">
+                    <button onClick={() => setIsCreateStaffModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-black transition-all text-xs shadow-sm shadow-blue-500/20 whitespace-nowrap">
+                        <span className="text-base leading-none mb-0.5 mr-1">+</span> Add Staff Member
+                    </button>
+                    <Link href={route('owner.payroll.index')} className="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-lg font-black flex items-center transition-all text-xs shadow-sm whitespace-nowrap">
+                        <CurrencyDollarIcon className="h-4 w-4 mr-1.5" />
+                        Process Payroll
+                    </Link>
+                </div>
+            }
         >
             <Head title="HR Management" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    
-                    <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <h3 className="text-lg font-bold text-slate-700">Staff Profiles & Attendance</h3>
-                        <div className="flex gap-3">
-                            <button onClick={() => setIsCreateStaffModalOpen(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow transition-all">
-                                Add Staff Member
-                            </button>
-                            <Link href={route('owner.payroll.index')} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow flex items-center transition-all">
-                                <CurrencyDollarIcon className="h-5 w-5 mr-2" />
-                                Process Payroll
-                            </Link>
-                        </div>
-                    </div>
+            <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6 space-y-6">
 
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-100">
                         <div className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {staff.map(mechanic => (
+                                {staff.data && staff.data.map(mechanic => (
                                     <div key={mechanic.id} className="border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow">
                                         <div className="flex items-center space-x-4 mb-4">
                                             <div className="bg-blue-100 p-3 rounded-full">
@@ -164,10 +169,10 @@ export default function HRIndex({ staff }) {
                                     </div>
                                 ))}
                             </div>
+                            {staff.links && <Pagination links={staff.links} />}
                         </div>
                     </div>
                 </div>
-            </div>
 
             {/* Profile Modal */}
             <Modal show={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)}>

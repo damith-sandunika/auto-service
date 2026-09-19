@@ -59,28 +59,23 @@ class DashboardController extends Controller
             $currentBalance = $activeSession->opening_cash + $cashSales - $expensesLogged;
         }
 
-        // Stats: Active Jobs
-        $activeJobsCount = Job::where('garage_id', $garage_id)
-            ->whereIn('status', ['pending', 'in_progress'])
-            ->count();
+        // Cache Stats for Performance
+        $cacheKey = "garage_stats_{$garage_id}_{$today->toDateString()}";
+        $stats = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($garage_id, $today) {
+            return [
+                'activeJobsCount' => Job::where('garage_id', $garage_id)->whereIn('status', ['pending', 'in_progress'])->count(),
+                'todayRevenue' => Invoice::where('garage_id', $garage_id)->whereDate('created_at', $today)->sum('total_amount'),
+                'totalStaff' => User::where('role', 'garage_staff')->where('garage_id', $garage_id)->count(),
+                'completedJobsToday' => Job::where('garage_id', $garage_id)->where('status', 'completed')->whereDate('updated_at', $today)->count(),
+            ];
+        });
 
-        // Stats: Today's Revenue (Total Invoices)
-        $todayRevenue = Invoice::where('garage_id', $garage_id)
-            ->whereDate('created_at', $today)
-            ->sum('total_amount');
-
-        // Stats: Available Staff
-        $totalStaff = User::where('role', 'garage_staff')
-            ->where('garage_id', $garage_id)
-            ->count();
-            
+        $activeJobsCount = $stats['activeJobsCount'];
+        $todayRevenue = $stats['todayRevenue'];
+        $totalStaff = $stats['totalStaff'];
+        $completedJobsToday = $stats['completedJobsToday'];
+        
         $availableStaffText = "$totalStaff / $totalStaff";
-
-        // Stats: Completed Jobs Today
-        $completedJobsToday = Job::where('garage_id', $garage_id)
-            ->where('status', 'completed')
-            ->whereDate('updated_at', $today)
-            ->count();
 
         // Recent Jobs
         $recentJobs = Job::with(['vehicle.owner', 'mechanic'])
@@ -179,9 +174,9 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function openShift(Request $request)
+    public function openShift(Request $request, \App\Actions\Dashboard\ManageShiftAction $manageShiftAction)
     {
-        $request->validate([
+        $validated = $request->validate([
             'opening_cash' => 'required|numeric|min:0',
             'attendance' => 'nullable|array',
             'attendance.*.user_id' => 'required|exists:users,id',
@@ -191,93 +186,25 @@ class DashboardController extends Controller
         $garage = \App\Models\Garage::where('owner_id', Auth::id())->first();
         if (!$garage) return redirect()->back()->with('error', 'Garage not found.');
 
-        $existing = RegisterSession::where('garage_id', $garage->id)
-            ->where('status', 'open')
-            ->first();
-
-        if ($existing) {
-            return redirect()->back()->with('error', 'Branch is already open.');
+        try {
+            $manageShiftAction->openShift($validated, $garage);
+            return redirect()->back()->with('success', 'Branch shift opened and attendance marked successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
-
-        $now = now();
-
-        \Illuminate\Support\Facades\DB::transaction(function () use ($garage, $request, $now) {
-            RegisterSession::create([
-                'garage_id'    => $garage->id,
-                'user_id'      => Auth::id(),
-                'opening_cash' => $request->opening_cash,
-                'opened_at'    => $now,
-                'status'       => 'open',
-            ]);
-
-            if ($request->has('attendance')) {
-                foreach ($request->attendance as $att) {
-                    \App\Models\StaffAttendance::updateOrCreate(
-                        [
-                            'user_id' => $att['user_id'],
-                            'date' => $now->toDateString(),
-                        ],
-                        [
-                            'status' => $att['status'],
-                            'arrival_time' => $att['status'] === 'present' || $att['status'] === 'half_day' ? $now->toTimeString() : null,
-                            'ot_hours' => 0
-                        ]
-                    );
-                }
-            }
-        });
-
-        return redirect()->back()->with('success', 'Branch shift opened and attendance marked successfully.');
     }
 
-    public function closeShift(Request $request)
+    public function closeShift(Request $request, \App\Actions\Dashboard\ManageShiftAction $manageShiftAction)
     {
         $garage = \App\Models\Garage::where('owner_id', Auth::id())->first();
         if (!$garage) return redirect()->back()->with('error', 'Garage not found.');
 
-        $session = RegisterSession::where('garage_id', $garage->id)
-            ->where('status', 'open')
-            ->first();
-
-        if (!$session) {
-            return redirect()->back()->with('error', 'No active branch shift found.');
+        try {
+            $manageShiftAction->closeShift($garage);
+            return redirect()->back()->with('success', 'Branch shift closed successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
-
-        // Calculate closing balance
-        $cashSales = Payment::whereHas('invoice', function($q) use ($garage) {
-                $q->where('garage_id', $garage->id);
-            })
-            ->where('payment_method', 'cash')
-            ->where('created_at', '>=', $session->opened_at)
-            ->sum('amount');
-
-        $expensesLogged = Expense::where('garage_id', $garage->id)
-            ->where('created_at', '>=', $session->opened_at)
-            ->sum('amount');
-
-        $finalCash = $session->opening_cash + $cashSales - $expensesLogged;
-
-        \Illuminate\Support\Facades\DB::transaction(function () use ($session, $finalCash, $garage) {
-            $session->update([
-                'closing_cash' => $finalCash,
-                'closed_at' => now(),
-                'status' => 'closed',
-                'closed_by' => Auth::id(),
-            ]);
-
-            // Mark all active staff as OFF
-            \App\Models\StaffAttendance::whereDate('date', now()->toDateString())
-                ->whereHas('user', function($q) use ($garage) {
-                    $q->where('garage_id', $garage->id);
-                })
-                ->whereNotNull('arrival_time')
-                ->whereNull('departure_time')
-                ->update([
-                    'departure_time' => now()->toTimeString()
-                ]);
-        });
-
-        return redirect()->back()->with('success', 'Branch shift closed successfully.');
     }
 
     public function markStaffIn(Request $request, $userId)

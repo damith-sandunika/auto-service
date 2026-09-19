@@ -1,8 +1,9 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { BriefcaseIcon, UsersIcon, CurrencyDollarIcon, CheckBadgeIcon, BuildingStorefrontIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { BriefcaseIcon, CheckBadgeIcon, CurrencyDollarIcon, BuildingStorefrontIcon, ArrowRightIcon, UsersIcon } from '@heroicons/react/24/outline';
 import Modal from '@/Components/Modal';
 import { useState } from 'react';
+import StatCard from '@/Components/StatCard';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function Dashboard({ stats, charts, recentJobs, shift, mechanics }) {
@@ -39,35 +40,38 @@ export default function Dashboard({ stats, charts, recentJobs, shift, mechanics 
     };
 
     return (
-        <AuthenticatedLayout header={
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-slide-up">
-                <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">Dashboard</h2>
-                    <p className="text-[13px] font-bold text-slate-500 mt-1">Today's updates and key metrics</p>
+        <AuthenticatedLayout 
+            fullWidth={true}
+            header={
+                <div className="text-left w-full">
+                    <h2 className="text-xl font-black text-black">Dashboard</h2>
+                    <p className="text-xs font-bold text-blue-600 mt-1">Today's updates and key metrics</p>
                 </div>
-                {shift.active && (
-                    <div className="flex flex-row items-center gap-2 sm:gap-3 w-full md:w-auto justify-end mt-3 md:mt-0 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
-                        <div className="flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 bg-green-50 border border-green-200 rounded-xl h-9 sm:h-10 shadow-sm whitespace-nowrap">
+            }
+            headerActions={
+                shift.active && (
+                    <div className="w-full sm:w-auto flex justify-end gap-3">
+                        <div className="hidden sm:flex items-center justify-center gap-1.5 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg shadow-sm whitespace-nowrap">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                             </span>
-                            <span className="text-[10px] sm:text-xs font-bold text-green-700 tracking-wide uppercase">Shift Active</span>
+                            <span className="text-[10px] font-black text-green-700 tracking-wider uppercase">Shift Active</span>
                         </div>
-                        <Link href={route('owner.pos.index')} className="flex items-center justify-center gap-1.5 px-3 sm:px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] sm:text-[13px] font-extrabold rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 transition-all duration-300 h-9 sm:h-10 whitespace-nowrap">
-                            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" d="M12 5v14M5 12h14" /></svg>
+                        <Link href={route('owner.pos.index')} className="flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-xs font-black rounded-lg shadow-sm shadow-blue-500/20 hover:bg-blue-700 transition-all whitespace-nowrap">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" d="M12 5v14M5 12h14" /></svg>
                             New Job / POS
                         </Link>
-                        <button onClick={() => setIsCloseShiftModalOpen(true)} className="flex items-center justify-center px-3 sm:px-5 py-2 bg-white text-slate-600 text-[11px] sm:text-[13px] font-bold border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-slate-800 transition-colors h-9 sm:h-10 shadow-sm whitespace-nowrap">
+                        <button onClick={() => setIsCloseShiftModalOpen(true)} className="flex items-center justify-center px-4 py-2 bg-slate-100 text-slate-700 text-xs font-black rounded-lg hover:bg-slate-200 transition-colors shadow-sm whitespace-nowrap">
                             Close Shift
                         </button>
                     </div>
-                )}
-            </div>
-        }>
+                )
+            }
+        >
             <Head title="Garage Owner Dashboard" />
 
-            <div className="max-w-7xl mx-auto pb-12 px-4 sm:px-6 lg:px-8">
+            <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6">
                 
                 {!shift.active ? (
                     <div className="flex justify-center py-10 px-4 animate-slide-up">
@@ -143,21 +147,19 @@ export default function Dashboard({ stats, charts, recentJobs, shift, mechanics 
                         {/* STAT CARDS */}
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                             {[
-                                { label: 'Active Jobs', value: stats.activeJobs, sub: 'Processing now', color: 'text-blue-600', bg: 'bg-blue-50', icon: BriefcaseIcon },
-                                { label: 'Completed Today', value: stats.completedJobsToday, sub: 'Delivered', color: 'text-emerald-500', bg: 'bg-emerald-50', icon: CheckBadgeIcon },
-                                { label: 'Cash on Drawer', value: formatPrice(shift.current_balance || 0), sub: 'Current', color: 'text-amber-500', bg: 'bg-amber-50', icon: CurrencyDollarIcon },
-                                { label: 'Total Revenue', value: formatPrice(stats.todayRevenue), sub: `Cash: ${formatPrice(shift.cash_sales || 0)} | Card: ${formatPrice(shift.card_sales || 0)}`, color: 'text-violet-600', bg: 'bg-violet-50', icon: CurrencyDollarIcon },
+                                { title: 'Active Jobs', value: stats.activeJobs, sub: 'Processing now', color: 'blue', icon: BriefcaseIcon },
+                                { title: 'Completed Today', value: stats.completedJobsToday, sub: 'Delivered', color: 'emerald', icon: CheckBadgeIcon },
+                                { title: 'Cash on Drawer', value: formatPrice(shift.current_balance || 0), sub: 'Current', color: 'amber', icon: CurrencyDollarIcon },
+                                { title: 'Total Revenue', value: formatPrice(stats.todayRevenue), sub: `Cash: ${formatPrice(shift.cash_sales || 0)} | Card: ${formatPrice(shift.card_sales || 0)}`, color: 'violet', icon: CurrencyDollarIcon },
                             ].map((card, index) => (
-                                <div key={card.label} className="bg-white/70 backdrop-blur-md rounded-2xl border border-slate-200/60 p-5 flex justify-between items-center shadow-sm hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1 transition-all duration-300 animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
-                                    <div>
-                                        <p className="text-[9px] sm:text-[10.5px] font-extrabold text-slate-500 uppercase tracking-widest mb-1 leading-tight sm:leading-normal whitespace-normal">{card.label}</p>
-                                        <p className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight leading-none mb-1 sm:mb-2">{card.value}</p>
-                                        <p className={`inline-block px-1.5 sm:px-2.5 py-0.5 text-[8px] sm:text-[10px] font-bold ${card.color} ${card.bg} rounded-md uppercase tracking-wide leading-tight`}>{card.sub}</p>
-                                    </div>
-                                    <div className={`w-8 h-8 sm:w-12 sm:h-12 rounded-xl ${card.bg} flex items-center justify-center shrink-0`}>
-                                        <card.icon className={`w-4 h-4 sm:w-6 sm:h-6 ${card.color}`} />
-                                    </div>
-                                </div>
+                                <StatCard
+                                    key={card.title}
+                                    title={card.title}
+                                    value={card.value}
+                                    sub={card.sub}
+                                    color={card.color}
+                                    icon={card.icon}
+                                />
                             ))}
                         </div>
 

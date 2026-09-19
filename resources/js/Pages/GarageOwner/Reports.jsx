@@ -40,15 +40,17 @@ export default function Reports({ startDate, endDate, stats, orders, services, e
     };
 
     return (
-        <AuthenticatedLayout header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Business Reports</h2>} fullWidth={true}>
-            <Head title="Reports" />
-            <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-6">
-                
-                {/* Header text */}
-                <div className="mb-2">
-                    <h2 className="text-2xl font-black text-slate-800">Business Reports</h2>
-                    <p className="text-sm text-gray-500 mt-1 font-medium">Analyze sales, revenue, and payroll</p>
+        <AuthenticatedLayout 
+            fullWidth={true}
+            header={
+                <div className="text-left w-full">
+                    <h2 className="text-xl font-black text-black">Business Reports</h2>
+                    <p className="text-xs font-bold text-blue-600 mt-1">Analyze sales, revenue, and payroll</p>
                 </div>
+            }
+        >
+            <Head title="Reports" />
+            <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6 space-y-6">
 
                 {/* Filter Form */}
                 <div className="bg-gray-50 p-4 rounded-md border border-gray-100 shadow-sm">
@@ -64,6 +66,14 @@ export default function Reports({ startDate, endDate, stats, orders, services, e
                         <button type="submit" className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700 transition-colors">
                             Apply Filter
                         </button>
+                        <a 
+                            href={route('owner.reports.export', { start_date: startDate, end_date: endDate })}
+                            className="px-4 py-2 bg-emerald-600 text-white text-xs font-semibold rounded hover:bg-emerald-700 transition-colors flex items-center"
+                            target="_blank"
+                        >
+                            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            Export CSV
+                        </a>
                     </form>
                 </div>
 

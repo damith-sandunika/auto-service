@@ -34,18 +34,29 @@ export default function SupplierShow({ supplier }) {
     };
 
     return (
-        <AuthenticatedLayout header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Supplier Ledger</h2>}>
+        <AuthenticatedLayout 
+            fullWidth={true}
+            header={
+                <div className="w-full text-left">
+                    <div>
+                        <div className="flex items-center gap-3 mb-1 text-left">
+                            <Link href={route('owner.purchases.index')} className="text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 hover:bg-slate-200 p-1.5 rounded-lg">
+                                <ArrowLeftIcon className="w-4 h-4" />
+                            </Link>
+                            <h2 className="text-xl font-black text-black">Supplier Ledger</h2>
+                        </div>
+                        <p className="text-xs font-bold text-blue-600 mt-0.5 ml-9">Manage payments, GRNs, and cheques for {supplier.name}.</p>
+                    </div>
+                </div>
+            }
+        >
             <Head title={`${supplier.name} - Ledger`} />
 
-            <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6">
                 
                 {/* Header Profile */}
                 <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 mb-8 relative overflow-hidden">
                     <div className={`absolute top-0 right-0 w-32 h-32 rounded-bl-full -mr-4 -mt-4 opacity-10 ${supplier.balance_due > 0 ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
-                    
-                    <Link href={route('owner.suppliers.index')} className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-700 mb-6 transition-colors">
-                        <ArrowLeftIcon className="w-4 h-4" /> Back to Suppliers
-                    </Link>
 
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                         <div>

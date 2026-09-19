@@ -14,10 +14,12 @@ class InventoryController extends Controller
     public function index()
     {
         $garageId = Auth::user()->garage_id;
-        $inventory = Inventory::where('garage_id', $garageId)->get();
+        $inventory = Inventory::where('garage_id', $garageId)->paginate(20);
+        $lowStockCount = Inventory::where('garage_id', $garageId)->where('quantity', '<=', 5)->count();
 
         return Inertia::render('GarageOwner/Inventory', [
-            'inventory' => $inventory
+            'inventory' => $inventory,
+            'lowStockCount' => $lowStockCount
         ]);
     }
 

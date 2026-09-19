@@ -4,10 +4,15 @@ import { useState } from 'react';
 import Modal from '@/Components/Modal';
 import InputError from '@/Components/InputError';
 import { DocumentTextIcon, PlusIcon, TrashIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import Pagination from '@/Components/Pagination';
+import PageHeader from '@/Components/PageHeader';
+import DataTable from '@/Components/DataTable';
+import Badge from '@/Components/Badge';
+import StatCard from '@/Components/StatCard';
 
-export default function PurchasesIndex({ purchases, suppliers, inventories }) {
+export default function PurchasesIndex({ purchases, suppliers, inventories, totalGRNAmount, totalPaidAmount, totalBalanceDue }) {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    
+
     const { data, setData, post, processing, errors, reset } = useForm({
         supplier_id: '',
         reference_no: '',
@@ -69,70 +74,61 @@ export default function PurchasesIndex({ purchases, suppliers, inventories }) {
         });
     };
 
-    const totalGRNAmount = purchases.reduce((sum, p) => sum + Number(p.total_amount), 0);
-    const totalPaidAmount = purchases.reduce((sum, p) => sum + Number(p.paid_amount), 0);
-    const totalBalanceDue = purchases.reduce((sum, p) => sum + Number(p.balance_amount), 0);
 
     return (
-        <AuthenticatedLayout header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Purchases & Suppliers</h2>}>
-            <Head title="Purchases & Suppliers" />
-
-            <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                
-                {/* Header & Tabs */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
-                    <div>
-                        <h2 className="text-3xl font-black text-slate-800 tracking-tight">Purchases & Suppliers</h2>
-                        <p className="text-sm text-slate-500 mt-1 font-medium">Manage your incoming stock, GRNs, and vendor balances.</p>
-                    </div>
-                    
-                    <div className="flex bg-slate-200/60 p-1 rounded-xl w-full md:w-auto">
+        <AuthenticatedLayout
+            fullWidth={true}
+            header={
+                <div className="text-left w-full">
+                    <h2 className="text-xl font-black text-black tracking-tight">Purchases & Suppliers</h2>
+                    <p className="text-xs font-bold text-blue-600 mt-1">Manage your incoming stock, GRNs, and vendor balances.</p>
+                </div>
+            }
+            headerActions={
+                <div className="w-full sm:w-auto flex justify-end">
+                    <div className="flex bg-slate-100 p-1 rounded-lg w-full sm:w-auto shadow-inner border border-slate-200/60">
                         <button 
                             onClick={() => setActiveTab('grn')}
-                            className={`flex-1 md:flex-none px-6 py-2 text-sm font-black rounded-lg transition-all ${activeTab === 'grn' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            className={`flex-1 sm:flex-none px-5 py-2 text-xs font-black rounded-md transition-all whitespace-nowrap ${activeTab === 'grn' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                         >
                             GRN & Purchases
                         </button>
                         <button 
                             onClick={() => setActiveTab('suppliers')}
-                            className={`flex-1 md:flex-none px-6 py-2 text-sm font-black rounded-lg transition-all ${activeTab === 'suppliers' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            className={`flex-1 sm:flex-none px-5 py-2 text-xs font-black rounded-md transition-all whitespace-nowrap ${activeTab === 'suppliers' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                         >
                             Suppliers Directory
                         </button>
                     </div>
                 </div>
+            }
+        >
+            <Head title="Purchases & Suppliers" />
+
+            <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6">
 
                 {activeTab === 'grn' && (
                     <div className="animate-fade-in-up">
                         {/* Summary Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total GRN Amount</p>
-                                    <h3 className="text-2xl font-black text-slate-800">Rs. {totalGRNAmount.toLocaleString('en-US', {minimumFractionDigits: 2})}</h3>
-                                </div>
-                                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
-                                    <DocumentTextIcon className="w-6 h-6 text-blue-500" />
-                                </div>
-                            </div>
-                            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Payments</p>
-                                    <h3 className="text-2xl font-black text-emerald-600">Rs. {totalPaidAmount.toLocaleString('en-US', {minimumFractionDigits: 2})}</h3>
-                                </div>
-                                <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center">
-                                    <svg className="w-6 h-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                </div>
-                            </div>
-                            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Balance Due</p>
-                                    <h3 className="text-2xl font-black text-rose-500">Rs. {totalBalanceDue.toLocaleString('en-US', {minimumFractionDigits: 2})}</h3>
-                                </div>
-                                <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center">
-                                    <svg className="w-6 h-6 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                                </div>
-                            </div>
+                            <StatCard
+                                title="Total GRN Amount"
+                                value={`Rs. ${totalGRNAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+                                color="blue"
+                                icon={DocumentTextIcon}
+                            />
+                            <StatCard
+                                title="Total Payments"
+                                value={`Rs. ${totalPaidAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+                                color="emerald"
+                                icon={DocumentTextIcon}
+                            />
+                            <StatCard
+                                title="Total Balance Due"
+                                value={`Rs. ${totalBalanceDue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+                                color="rose"
+                                icon={DocumentTextIcon}
+                            />
                         </div>
 
                         <div className="flex justify-end mb-6">
@@ -145,66 +141,53 @@ export default function PurchasesIndex({ purchases, suppliers, inventories }) {
                         {/* Purchases List */}
                         <div className="bg-white rounded-3xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="border-b border-slate-100 bg-slate-50/50">
-                                            <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">ID / Ref</th>
-                                            <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Date</th>
-                                            <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Supplier</th>
-                                            <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Items</th>
-                                            <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Total Amount</th>
-                                            <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Balance Due</th>
-                                            <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap text-center">Status</th>
+                                <DataTable
+                                    columns={[
+                                        { label: 'ID / Ref' },
+                                        { label: 'Date' },
+                                        { label: 'Supplier' },
+                                        { label: 'Items' },
+                                        { label: 'Total Amount', align: 'right' },
+                                        { label: 'Balance Due', align: 'right' },
+                                        { label: 'Status', align: 'center' },
+                                    ]}
+                                    isEmpty={!purchases.data || purchases.data.length === 0}
+                                    emptyMessage="No purchases recorded yet."
+                                >
+                                    {purchases.data?.map(purchase => (
+                                        <tr key={purchase.id} className="hover:bg-slate-50/50 transition-colors">
+                                            <td className="p-4">
+                                                <div className="font-black text-slate-800">#{purchase.id}</div>
+                                                <div className="text-[10px] text-slate-500 font-mono mt-0.5">{purchase.reference_no || '-'}</div>
+                                            </td>
+                                            <td className="p-4 text-sm font-semibold text-slate-600">
+                                                {new Date(purchase.date).toLocaleDateString()}
+                                            </td>
+                                            <td className="p-4">
+                                                <Link href={route('owner.suppliers.show', purchase.supplier_id)} className="text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline">
+                                                    {purchase.supplier?.name}
+                                                </Link>
+                                            </td>
+                                            <td className="p-4 text-sm text-slate-600 font-medium">
+                                                {purchase.items?.length || 0} items
+                                            </td>
+                                            <td className="p-4 text-right">
+                                                <div className="font-black text-slate-800">Rs. {Number(purchase.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+                                            </td>
+                                            <td className="p-4 text-right">
+                                                <div className={`font-black ${purchase.balance_amount > 0 ? 'text-red-500' : 'text-slate-400'}`}>
+                                                    Rs. {Number(purchase.balance_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                </div>
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <Badge variant={purchase.status === 'paid' ? 'success' : purchase.status === 'partial' ? 'warning' : 'danger'}>
+                                                    {purchase.status}
+                                                </Badge>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {purchases.map(purchase => (
-                                            <tr key={purchase.id} className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="p-4">
-                                                    <div className="font-black text-slate-800">#{purchase.id}</div>
-                                                    <div className="text-[10px] text-slate-500 font-mono mt-0.5">{purchase.reference_no || '-'}</div>
-                                                </td>
-                                                <td className="p-4 text-sm font-semibold text-slate-600">
-                                                    {new Date(purchase.date).toLocaleDateString()}
-                                                </td>
-                                                <td className="p-4">
-                                                    <Link href={route('owner.suppliers.show', purchase.supplier_id)} className="text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline">
-                                                        {purchase.supplier?.name}
-                                                    </Link>
-                                                </td>
-                                                <td className="p-4 text-sm text-slate-600 font-medium">
-                                                    {purchase.items?.length || 0} items
-                                                </td>
-                                                <td className="p-4 text-right">
-                                                    <div className="font-black text-slate-800">Rs. {Number(purchase.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                                                </td>
-                                                <td className="p-4 text-right">
-                                                    <div className={`font-black ${purchase.balance_amount > 0 ? 'text-red-500' : 'text-slate-400'}`}>
-                                                        Rs. {Number(purchase.balance_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                                    </div>
-                                                </td>
-                                                <td className="p-4 text-center">
-                                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${
-                                                        purchase.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 
-                                                        purchase.status === 'partial' ? 'bg-amber-100 text-amber-700' : 
-                                                        'bg-red-100 text-red-700'
-                                                    }`}>
-                                                        {purchase.status}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-
-                                        {purchases.length === 0 && (
-                                            <tr>
-                                                <td colSpan="7" className="p-12 text-center text-slate-400">
-                                                    <DocumentTextIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                                    <p className="font-medium">No purchases recorded yet.</p>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
+                                    ))}
+                                </DataTable>
+                                {purchases.links && <Pagination links={purchases.links} />}
                             </div>
                         </div>
                     </div>
@@ -248,7 +231,7 @@ export default function PurchasesIndex({ purchases, suppliers, inventories }) {
                                     </div>
 
                                     <div className="flex justify-between items-center pt-4 border-t border-slate-100 relative z-10">
-                                        <Link 
+                                        <Link
                                             href={route('owner.suppliers.show', supplier.id)}
                                             className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
                                         >
@@ -279,7 +262,7 @@ export default function PurchasesIndex({ purchases, suppliers, inventories }) {
                         <PlusIcon className="w-6 h-6 text-blue-600" />
                         Record New Purchase (GRN)
                     </h2>
-                    
+
                     <form onSubmit={submitCreate}>
                         {/* Header Info */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
@@ -309,7 +292,7 @@ export default function PurchasesIndex({ purchases, suppliers, inventories }) {
                                     <PlusIcon className="w-3 h-3" /> Add Item Row
                                 </button>
                             </div>
-                            
+
                             <div className="space-y-3">
                                 {data.items.map((item, index) => (
                                     <div key={index} className="flex flex-wrap md:flex-nowrap items-end gap-3 p-3 bg-white border border-slate-200 rounded-2xl relative group">
@@ -346,7 +329,7 @@ export default function PurchasesIndex({ purchases, suppliers, inventories }) {
 
                         {/* Footer Totals & Payment */}
                         <div className="border-t border-slate-100 pt-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-                            
+
                             <div className="w-full md:w-64">
                                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Immediate Paid Amount (Rs.)</label>
                                 <input type="number" min="0" step="0.01" value={data.paid_amount} onChange={e => setData('paid_amount', e.target.value)} className="w-full text-lg font-bold border-emerald-200 rounded-xl focus:border-emerald-500 focus:ring-emerald-500" />
@@ -356,7 +339,7 @@ export default function PurchasesIndex({ purchases, suppliers, inventories }) {
                             <div className="text-right w-full md:w-auto">
                                 <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Bill Amount</div>
                                 <div className="text-3xl font-black text-slate-800 mb-4">Rs. {calculateTotal().toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
-                                
+
                                 <div className="flex justify-end gap-3">
                                     <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
                                     <button type="submit" disabled={processing || data.items.length === 0} className="px-6 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30 disabled:opacity-50">

@@ -11,23 +11,27 @@ export default function Show({ invoice }) {
     const balance = parseFloat(invoice.total_amount) - totalPaid;
 
     return (
-        <AuthenticatedLayout header={
-            <div className="flex justify-between items-center w-full">
-                <div className="flex items-center gap-4">
+        <AuthenticatedLayout 
+            header={
+                <div className="text-left w-full flex items-center gap-4">
                     <Link href={route('owner.orders.index')} className="text-slate-500 hover:text-slate-700">
                         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
                     </Link>
-                    <span>Order Details: INV-{invoice.id.toString().padStart(4, '0')}</span>
+                    <h2 className="text-xl font-black text-black">Order Details: {invoice.invoice_number}</h2>
                 </div>
-                <a href={route('owner.orders.print', invoice.id)} target="_blank" rel="noreferrer" className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-extrabold transition-colors text-sm shadow-md shadow-indigo-500/20 flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                    Print Invoice
-                </a>
-            </div>
-        }>
-            <Head title={`Order INV-${invoice.id.toString().padStart(4, '0')}`} />
+            }
+            headerActions={
+                <div className="w-full sm:w-auto flex justify-end">
+                    <a href={route('owner.orders.print', invoice.id)} target="_blank" rel="noreferrer" className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-extrabold transition-colors text-sm shadow-md shadow-indigo-500/20 flex items-center gap-2 whitespace-nowrap">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                        Print Invoice
+                    </a>
+                </div>
+            }
+        >
+            <Head title={`Order ${invoice.invoice_number}`} />
 
             <div className="max-w-7xl mx-auto space-y-6">
                 

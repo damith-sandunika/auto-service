@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToGarage;
 
 class PurchaseOrder extends Model
 {
+    use BelongsToGarage;
+
     protected $fillable = [
         'garage_id', 'supplier_id', 'reference_no', 'total_amount', 'paid_amount', 'balance_amount', 'status', 'date'
     ];

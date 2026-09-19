@@ -26,23 +26,18 @@ export default function RemindersIndex({ reminders }) {
     };
 
     return (
-        <AuthenticatedLayout
-            header={<h2 className="font-semibold text-xl text-slate-800 leading-tight">Marketing & Reminders</h2>}
+        <AuthenticatedLayout 
+            fullWidth={true}
+            header={
+                <div className="text-left w-full">
+                    <h2 className="text-xl font-black text-black">Service Reminders</h2>
+                    <p className="text-xs font-bold text-blue-600 mt-1">Automatically generated reminders. Call these customers to increase repeat business.</p>
+                </div>
+            }
         >
             <Head title="Service Reminders" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    
-                    <div className="mb-6 flex justify-between items-center">
-                        <div>
-                            <h3 className="text-lg font-bold text-slate-700 flex items-center">
-                                <BellIcon className="h-6 w-6 mr-2 text-blue-600" />
-                                Upcoming & Overdue Service Reminders
-                            </h3>
-                            <p className="text-slate-500 text-sm mt-1">Automatically generated after checkout. Call these customers to increase repeat business.</p>
-                        </div>
-                    </div>
+            <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6">
 
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-100">
                         <div className="overflow-x-auto">
@@ -124,7 +119,6 @@ export default function RemindersIndex({ reminders }) {
                         </div>
                     </div>
                 </div>
-            </div>
         </AuthenticatedLayout>
     );
 }

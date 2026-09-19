@@ -92,4 +92,43 @@ class ReportController extends Controller
             'creditOrders' => $creditOrders
         ]);
     }
+
+    public function exportCsv(Request $request)
+    {
+        $garage = \App\Models\Garage::where('owner_id', Auth::id())->first();
+        if (!$garage) abort(404);
+
+        $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->query('end_date', now()->endOfMonth()->toDateString());
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=sales_report_{$startDate}_to_{$endDate}.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $callback = function() use ($garage, $startDate, $endDate) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Invoice ID', 'Date', 'Total Amount', 'Status']);
+
+            Invoice::where('garage_id', $garage->id)
+                ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+                ->chunk(500, function ($invoices) use ($file) {
+                    foreach ($invoices as $invoice) {
+                        fputcsv($file, [
+                            $invoice->id,
+                            $invoice->created_at->format('Y-m-d H:i:s'),
+                            $invoice->total_amount,
+                            $invoice->status
+                        ]);
+                    }
+                });
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }
