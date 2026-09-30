@@ -61,6 +61,19 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::get('pos', [\App\Http\Controllers\GarageOwner\PosController::class, 'index'])->name('pos.index');
+        Route::post('pos/store-job', [\App\Http\Controllers\GarageOwner\PosController::class, 'storeJob'])->name('pos.storeJob');
+        
+        Route::get('jobs/{job}/workspace', [\App\Http\Controllers\GarageOwner\JobWorkspaceController::class, 'show'])->name('jobs.workspace');
+        Route::get('jobs/{job}/print', [\App\Http\Controllers\GarageOwner\JobWorkspaceController::class, 'print'])->name('jobs.print');
+        Route::post('jobs/{job}/items', [\App\Http\Controllers\GarageOwner\JobWorkspaceController::class, 'addItem'])->name('jobs.items.store');
+        Route::post('jobs/{job}/payment', [\App\Http\Controllers\GarageOwner\JobWorkspaceController::class, 'addPayment'])->name('jobs.payment.store');
+        Route::patch('jobs/{job}/discount', [\App\Http\Controllers\GarageOwner\JobWorkspaceController::class, 'updateDiscount'])->name('jobs.discount.update');
+        Route::delete('job-items/{item}', [\App\Http\Controllers\GarageOwner\JobWorkspaceController::class, 'removeItem'])->name('jobs.items.destroy');
+        Route::patch('job-items/{item}/quantity', [\App\Http\Controllers\GarageOwner\JobWorkspaceController::class, 'updateQuantity'])->name('jobs.items.quantity');
+        Route::post('jobs/{job}/notes', [\App\Http\Controllers\GarageOwner\JobWorkspaceController::class, 'storeNote'])->name('jobs.notes.store');
+        Route::patch('job-notes/{note}', [\App\Http\Controllers\GarageOwner\JobWorkspaceController::class, 'updateNote'])->name('jobs.notes.update');
+        Route::delete('job-notes/{note}', [\App\Http\Controllers\GarageOwner\JobWorkspaceController::class, 'destroyNote'])->name('jobs.notes.destroy');
+        Route::post('jobs/{job}/complete', [\App\Http\Controllers\GarageOwner\JobWorkspaceController::class, 'complete'])->name('jobs.complete');
         Route::resource('staff', \App\Http\Controllers\GarageOwner\StaffController::class);
         Route::resource('inventory', \App\Http\Controllers\GarageOwner\InventoryController::class);
         Route::resource('orders', \App\Http\Controllers\GarageOwner\OrderController::class);
@@ -70,6 +83,10 @@ Route::middleware('auth')->group(function () {
         Route::resource('reports', \App\Http\Controllers\GarageOwner\ReportController::class);
         Route::get('settings', [\App\Http\Controllers\GarageOwner\SettingController::class, 'index'])->name('settings.index');
         Route::post('settings', [\App\Http\Controllers\GarageOwner\SettingController::class, 'update'])->name('settings.update');
+        Route::get('settings/invoice', [\App\Http\Controllers\GarageOwner\InvoiceSettingController::class, 'edit'])->name('settings.invoice');
+        Route::post('settings/invoice', [\App\Http\Controllers\GarageOwner\InvoiceSettingController::class, 'update'])->name('settings.invoice.update');
+        Route::get('settings/thermal', [\App\Http\Controllers\GarageOwner\ThermalSettingController::class, 'edit'])->name('settings.thermal');
+        Route::post('settings/thermal', [\App\Http\Controllers\GarageOwner\ThermalSettingController::class, 'update'])->name('settings.thermal.update');
 
         // HR & Payroll
         Route::resource('hr', \App\Http\Controllers\GarageOwner\HRController::class);

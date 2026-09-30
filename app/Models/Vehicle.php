@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToGarage;
 
 class Vehicle extends Model
 {
+    use BelongsToGarage;
     //
     protected $fillable = ['vehicle_number', 'make', 'model', 'year', 'owner_id'];
 

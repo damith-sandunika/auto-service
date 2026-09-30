@@ -86,10 +86,12 @@ class OrderController extends Controller
 
     public function print(string $id)
     {
-        $invoice = Invoice::with(['job.vehicle', 'job.items', 'payments', 'garage'])->findOrFail($id);
+        $invoice = Invoice::with(['job.vehicle.owner', 'job.items', 'payments', 'garage'])->findOrFail($id);
+        $settings = \App\Models\GarageInvoiceSetting::where('garage_id', Auth::user()->garage_id)->first();
         
         return Inertia::render('GarageOwner/PrintInvoice', [
-            'invoice' => $invoice
+            'invoice' => $invoice,
+            'settings' => $settings
         ]);
     }
 }

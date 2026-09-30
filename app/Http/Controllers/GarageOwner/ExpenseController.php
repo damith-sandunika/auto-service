@@ -13,7 +13,7 @@ class ExpenseController extends Controller
     public function index()
     {
         $garage_id = Auth::user()->garage_id;
-        $expenses = Expense::where('garage_id', $garage_id)->orderBy('expense_date', 'desc')->get();
+        $expenses = Expense::where('garage_id', $garage_id)->orderBy('expense_date', 'desc')->paginate(20);
 
         return Inertia::render('GarageOwner/Expenses', [
             'expenses' => $expenses

@@ -27,10 +27,14 @@ class CreatePurchaseOrderAction
             $status = $balanceAmount <= 0 ? 'paid' : ($paidAmount > 0 ? 'partial' : 'pending');
 
             // 2. Create Purchase Order
+            $referenceNo = !empty($data['reference_no']) 
+                ? $data['reference_no'] 
+                : 'PO-' . \App\Services\SequenceGenerator::getNextNumber($garageId, 'purchase_order');
+
             $purchase = PurchaseOrder::create([
                 'garage_id' => $garageId,
                 'supplier_id' => $data['supplier_id'],
-                'reference_no' => $data['reference_no'],
+                'reference_no' => $referenceNo,
                 'date' => $data['date'],
                 'total_amount' => $totalAmount,
                 'paid_amount' => $paidAmount,

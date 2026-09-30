@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import Modal from '@/Components/Modal';
 import InputError from '@/Components/InputError';
@@ -7,6 +7,7 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PageHeader from '@/Components/PageHeader';
 import DataTable from '@/Components/DataTable';
+import Pagination from '@/Components/Pagination';
 
 export default function Expenses({ expenses }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,10 +62,10 @@ export default function Expenses({ expenses }) {
                         { label: 'Description' },
                         { label: 'Amount', align: 'right' },
                     ]}
-                    isEmpty={!expenses || expenses.length === 0}
+                    isEmpty={!expenses || !expenses.data || expenses.data.length === 0}
                     emptyMessage="No expenses found."
                 >
-                    {expenses?.map((exp) => (
+                    {expenses?.data?.map((exp) => (
                         <tr key={exp.id} className="hover:bg-slate-50 transition-colors">
                             <td className="px-6 py-4 font-bold text-slate-800">{new Date(exp.expense_date).toLocaleDateString()}</td>
                             <td className="px-6 py-4 font-bold text-indigo-600 uppercase tracking-wider text-xs">{exp.category}</td>
@@ -75,6 +76,9 @@ export default function Expenses({ expenses }) {
                         </tr>
                     ))}
                 </DataTable>
+                
+                {/* Pagination */}
+                {expenses?.links && <Pagination links={expenses.links} />}
             </div>
 
             <Modal show={isModalOpen} onClose={closeModal} maxWidth="md">

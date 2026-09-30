@@ -11,7 +11,7 @@ class Job extends Model
 
     protected $table = 'service_jobs';
 
-    protected $fillable = ['garage_id', 'vehicle_id', 'assigned_mechanic_id', 'status', 'description', 'total_cost'];
+    protected $fillable = ['garage_id', 'vehicle_id', 'assigned_mechanic_id', 'status', 'description', 'total_cost', 'discount'];
 
     public function garage()
     {
@@ -33,8 +33,18 @@ class Job extends Model
         return $this->hasMany(JobItem::class);
     }
 
+    public function payments()
+    {
+        return $this->hasMany(JobPayment::class);
+    }
+
     public function invoice()
     {
         return $this->hasOne(Invoice::class);
+    }
+
+    public function notes()
+    {
+        return $this->hasMany(JobNote::class);
     }
 }

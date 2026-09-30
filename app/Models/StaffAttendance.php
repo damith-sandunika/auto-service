@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToGarage;
 
 class StaffAttendance extends Model
 {
+    use BelongsToGarage;
     protected $fillable = [
         'user_id',
         'date',

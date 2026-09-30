@@ -1,7 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
+import InvoicePreview from '@/Components/Invoice/InvoicePreview';
 
-export default function PrintInvoice({ invoice }) {
+export default function PrintInvoice({ invoice, settings }) {
     
     useEffect(() => {
         // Auto-print when loaded
@@ -16,11 +17,63 @@ export default function PrintInvoice({ invoice }) {
     const totalPaid = payments.reduce((acc, curr) => acc + parseFloat(curr.amount), 0);
     const balance = parseFloat(invoice.total_amount) - totalPaid;
 
+    const isA4 = settings?.paper_size === 'A4';
+
+    if (isA4) {
+        const realData = {
+            invoice_no: invoice.invoice_number || `INV-${invoice.id.toString().padStart(5, '0')}`,
+            date: new Date(invoice.created_at).toLocaleDateString(),
+            customer_name: invoice.job?.vehicle?.owner?.name || 'Walk-in Customer',
+            vehicle_no: invoice.job?.vehicle?.vehicle_number || '-',
+            items: items.map(i => ({
+                desc: i.description,
+                qty: i.quantity,
+                price: parseFloat(i.price)
+            })),
+            subtotal: parseFloat(invoice.total_amount) + parseFloat(invoice.discount || 0),
+            discount: parseFloat(invoice.discount || 0),
+            tax: parseFloat(invoice.tax || 0),
+            total: parseFloat(invoice.total_amount)
+        };
+        
+        return (
+            <>
+                <Head title={`Print Invoice #${invoice.id}`} />
+                <div className="print:m-0 print:p-0 flex justify-center py-10 print:py-0">
+                    <InvoicePreview settings={settings} originalLogo={settings.logo_url || (garage?.logo_path ? '/storage/'+garage.logo_path : null)} realData={realData} isPreview={false} />
+                </div>
+                <div className="no-print" style={{ marginTop: '24px', textAlign: 'center', paddingBottom: '40px' }}>
+                    <button onClick={() => window.print()} style={{ padding: '10px 24px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>
+                        🖨 Print Invoice
+                    </button>
+                    <button onClick={() => window.close()} style={{ padding: '10px 24px', background: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', marginLeft: '12px' }}>
+                        Close Tab
+                    </button>
+                </div>
+                <style dangerouslySetInnerHTML={{__html: `
+                    @page { size: auto; margin: 0; }
+                    body { background: #f8fafc; }
+                    @media print {
+                        body { background: #fff; margin: 0; padding: 0; }
+                        nav, header, footer, aside, .no-print { display: none !important; }
+                    }
+                `}} />
+            </>
+        );
+    }
+
     return (
         <>
             <Head title={`Print Invoice #${invoice.id}`} />
             <div className="mx-auto bg-white text-black print:m-0 print:p-0 relative shadow-[0_10px_30px_rgba(0,0,0,0.1)] print:shadow-none" 
-                 style={{ width: '80mm', padding: '4mm 3mm', fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontSize: '12px', minHeight: '400px' }} 
+                 style={{ 
+                    width: settings?.paper_width || '80mm', 
+                    padding: '4mm 3mm', 
+                    fontFamily: settings?.font_family === 'sans-serif' ? "'Inter', system-ui, -apple-system, sans-serif" : "'Courier New', Courier, monospace", 
+                    fontSize: '12px', 
+                    lineHeight: settings?.line_height || '1.4',
+                    minHeight: '400px' 
+                 }} 
                  id="thermal-bill">
                 
                 {/* Jagged top edge effect (hidden in print) */}
@@ -28,9 +81,11 @@ export default function PrintInvoice({ invoice }) {
 
                 {/* Header & Logo */}
                 <div className="text-center" style={{ marginBottom: '12px' }}>
-                    {garage?.logo_path && (
-                        <img src={`/storage/${garage.logo_path}`} alt="Logo" style={{ maxWidth: `${garage.logo_size || 140}px`, height: 'auto', filter: 'grayscale(100%) contrast(1.2)', display: 'inline-block' }} />
-                    )}
+                    {settings?.logo_url ? (
+                        <img src={settings.logo_url} alt="Logo" style={{ maxWidth: `${settings?.logo_size || 140}px`, height: 'auto', display: 'inline-block' }} />
+                    ) : garage?.logo_path ? (
+                        <img src={`/storage/${garage.logo_path}`} alt="Logo" style={{ maxWidth: `${settings?.logo_size || 140}px`, height: 'auto', display: 'inline-block' }} />
+                    ) : null}
                 </div>
                 
                 <div className="text-center" style={{ fontSize: '18px', letterSpacing: '-0.03em', fontWeight: 800, marginBottom: '2px' }}>
@@ -54,7 +109,7 @@ export default function PrintInvoice({ invoice }) {
                 {/* Details */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontSize: '12px' }}>
                     <span style={{ flex: 1, textAlign: 'left' }}>INV No:</span>
-                    <span style={{ fontWeight: 800, textAlign: 'right' }}>{invoice.id.toString().padStart(5, '0')}</span>
+                    <span style={{ fontWeight: 800, textAlign: 'right' }}>{invoice.invoice_number || invoice.id.toString().padStart(5, '0')}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontSize: '12px' }}>
                     <span style={{ flex: 1, textAlign: 'left' }}>Date:</span>
@@ -146,10 +201,16 @@ export default function PrintInvoice({ invoice }) {
 
                 <div style={{ borderTop: '1.5px dashed #000', margin: '8px 0' }}></div>
                 
+                {settings?.show_email && garage?.email && (
+                    <div style={{ textAlign: 'center', fontSize: '10px', marginTop: '4px' }}>
+                        {garage.email}
+                    </div>
+                )}
+                
                 <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '13px', marginTop: '8px' }}>
                     Thank you! Drive safely
                 </div>
-                <div style={{ textAlign: 'center', fontSize: '12px', marginTop: '8px' }}>
+                <div style={{ textAlign: 'center', fontSize: '12px', marginTop: '8px', opacity: 0.8 }}>
                     Powered by DSRZone
                 </div>
 

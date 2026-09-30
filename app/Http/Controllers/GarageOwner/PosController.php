@@ -39,193 +39,84 @@ class PosController extends Controller
         $inventory = Inventory::where('garage_id', $garageId)->get();
         $mechanics = User::where('role', 'garage_staff')->where('garage_id', $garageId)->get();
         $customers = User::where('role', 'vehicle_owner')->with('vehicles')->get();
+        
+        $jobs = Job::where('garage_id', $garageId)
+            ->where('status', '!=', 'completed')
+            ->with(['vehicle.owner', 'mechanic'])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return Inertia::render('GarageOwner/POS', [
             'services' => $services,
             'inventory' => $inventory,
             'mechanics' => $mechanics,
-            'customers' => $customers
+            'customers' => $customers,
+            'jobs' => $jobs
         ]);
     }
 
-    public function store(Request $request)
+    public function storeJob(Request $request)
     {
         $garageId = $this->getGarageId();
 
         $request->validate([
-            'vehicle_number' => 'required|string',
-            'customer_name' => 'required|string',
-            'mechanic_id' => 'required|exists:users,id',
-            'items' => 'required|array|min:1',
-            'items.*.item_type' => 'required|in:service,part',
-            'items.*.id' => 'required',
-            'items.*.description' => 'required|string',
-            'items.*.quantity' => 'required|numeric|min:1',
-            'items.*.price' => 'required|numeric|min:0',
-            'payment_status' => 'required|in:pending,paid',
-            'payment_method' => 'nullable|string',
-            'amount_paid' => 'nullable|numeric|min:0'
+            'vehicle_id' => 'nullable|exists:vehicles,id',
+            'new_vehicle_number' => 'required_without:vehicle_id|nullable|string|max:255',
+            'new_vehicle_make' => 'nullable|string',
+            'new_vehicle_model' => 'nullable|string',
+            
+            'customer_id' => 'nullable|exists:users,id',
+            'new_customer_name' => 'required_without:customer_id|nullable|string|max:255',
+            'new_customer_phone' => 'nullable|string',
+
+            'mechanic_id' => 'nullable|exists:users,id',
+            'description' => 'nullable|string'
         ]);
 
         DB::beginTransaction();
-
         try {
-            // Find or Create Customer
-            $customer = User::where('name', $request->customer_name)
-                ->where('role', 'vehicle_owner')
-                ->first();
-            
-            if (!$customer) {
+            // Handle Customer
+            $customerId = $request->customer_id;
+            if (!$customerId && $request->new_customer_name) {
                 $customer = User::create([
-                    'name' => $request->customer_name,
-                    'email' => strtolower(str_replace(' ', '', $request->customer_name)) . rand(100,999) . '@garage.local',
+                    'garage_id' => $garageId,
+                    'name' => $request->new_customer_name,
+                    'email' => strtolower(str_replace(' ', '', $request->new_customer_name)) . rand(100,999) . '@garage.local',
+                    'phone' => $request->new_customer_phone,
                     'password' => bcrypt('password'),
                     'role' => 'vehicle_owner'
                 ]);
+                $customerId = $customer->id;
             }
 
-            // Find or Create Vehicle
-            $vehicle = Vehicle::firstOrCreate(
-                ['vehicle_number' => $request->vehicle_number],
-                ['owner_id' => $customer->id, 'make' => 'Unknown', 'model' => 'Unknown']
-            );
-
-            if (!$vehicle->owner_id) {
-                $vehicle->update(['owner_id' => $customer->id]);
+            // Handle Vehicle
+            $vehicleId = $request->vehicle_id;
+            if (!$vehicleId && $request->new_vehicle_number) {
+                $vehicle = Vehicle::create([
+                    'garage_id' => $garageId,
+                    'owner_id' => $customerId,
+                    'vehicle_number' => $request->new_vehicle_number,
+                    'make' => $request->new_vehicle_make ?? 'Unknown',
+                    'model' => $request->new_vehicle_model ?? 'Unknown'
+                ]);
+                $vehicleId = $vehicle->id;
             }
 
-            // Create Job
             $job = Job::create([
                 'garage_id' => $garageId,
-                'vehicle_id' => $vehicle->id,
+                'vehicle_id' => $vehicleId,
                 'assigned_mechanic_id' => $request->mechanic_id,
-                'status' => 'completed',
-                'description' => 'POS Checkout Job',
-                'total_cost' => collect($request->items)->sum(function($item) { return $item['price'] * $item['quantity']; })
-            ]);
-
-            // Create Job Items
-            $totalAmount = 0;
-            foreach ($request->items as $itemData) {
-                $subtotal = $itemData['price'] * $itemData['quantity'];
-                $totalAmount += $subtotal;
-
-                JobItem::create([
-                    'job_id' => $job->id,
-                    'item_type' => $itemData['item_type'],
-                    'description' => $itemData['description'],
-                    'quantity' => $itemData['quantity'],
-                    'price' => $itemData['price']
-                ]);
-
-                if ($itemData['item_type'] === 'part') {
-                    $inv = Inventory::find($itemData['id']);
-                    if ($inv) {
-                        $inv->decrement('quantity', $itemData['quantity']);
-                    }
-                }
-            }
-
-            $invoiceNumber = 'INV-' . \App\Services\SequenceGenerator::getNextNumber($garageId, 'invoice');
-
-            // Create Invoice
-            $invoice = Invoice::create([
-                'garage_id' => $garageId,
-                'job_id' => $job->id,
-                'invoice_number' => $invoiceNumber,
-                'total_amount' => collect($request->items)->sum(function($item) { return $item['price'] * $item['quantity']; }), // Subtotal
-                'discount' => $request->discount ?? 0,
-                'tendered_amount' => $request->tendered_amount ?? 0,
-                'balance_amount' => $request->balance_amount ?? 0,
-                'status' => $request->payment_status
-            ]);
-
-            // Add Payment if provided and not credit
-            if ($request->payment_status === 'paid' && $request->payment_method !== 'credit') {
-                $paymentAmount = $request->amount_paid > 0 ? $request->amount_paid : ($invoice->total_amount - $invoice->discount);
-                
-                Payment::create([
-                    'invoice_id' => $invoice->id,
-                    'amount' => $paymentAmount,
-                    'payment_method' => $request->payment_method ?? 'cash',
-                    'payment_date' => now()
-                ]);
-
-                // Log in Cashbook
-                \App\Models\CashbookTransaction::create([
-                    'garage_id' => $garageId,
-                    'bank_account_id' => null,
-                    'type' => 'in',
-                    'amount' => $paymentAmount,
-                    'reference_type' => 'invoice',
-                    'reference_id' => $invoice->id,
-                    'description' => 'Payment for POS Invoice #' . $invoice->id . ' (' . ($request->payment_method ?? 'cash') . ')',
-                    'date' => now()->toDateString(),
-                ]);
-            }
-
-            // Auto-generate Service Reminder for 3 months later
-            if ($vehicle) {
-                \App\Models\ServiceReminder::create([
-                    'garage_id' => $garageId,
-                    'vehicle_id' => $vehicle->id,
-                    'service_type' => 'General Service / Follow-up',
-                    'due_date' => now()->addMonths(3),
-                    'status' => 'pending',
-                    'notes' => 'Auto-generated from POS invoice #' . $invoice->id
-                ]);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'invoice_id' => $invoice->id,
-                'message' => 'Checkout completed successfully'
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['error' => 'POS checkout failed: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function registerVehicle(Request $request)
-    {
-        $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'customer_phone' => 'nullable|string|max:20',
-            'vehicle_number' => 'required|string|max:50|unique:vehicles,vehicle_number',
-            'make' => 'required|string|max:100',
-            'model' => 'required|string|max:100',
-            'year' => 'nullable|integer|min:1900|max:' . (date('Y') + 1),
-        ]);
-
-        DB::beginTransaction();
-        try {
-            // Find or create customer
-            $customer = User::firstOrCreate(
-                ['name' => $request->customer_name, 'role' => 'vehicle_owner'],
-                [
-                    'email' => strtolower(str_replace(' ', '', $request->customer_name)) . rand(1000, 9999) . '@customer.local',
-                    'password' => bcrypt('password'),
-                    'phone' => $request->customer_phone
-                ]
-            );
-
-            // Create vehicle
-            $vehicle = Vehicle::create([
-                'vehicle_number' => strtoupper($request->vehicle_number),
-                'make' => $request->make,
-                'model' => $request->model,
-                'year' => $request->year,
-                'owner_id' => $customer->id
+                'description' => $request->description,
+                'status' => 'in_progress',
+                'total_cost' => 0
             ]);
 
             DB::commit();
-            return redirect()->back()->with('success', 'Vehicle registered successfully.');
+            return redirect()->route('owner.jobs.workspace', $job->id)->with('success', 'Job created successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['error' => 'Registration failed: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Failed to create job: ' . $e->getMessage()]);
         }
     }
+
 }

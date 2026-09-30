@@ -14,5 +14,11 @@ trait BelongsToGarage
     protected static function booted()
     {
         static::addGlobalScope(new GarageScope);
+
+        static::creating(function ($model) {
+            if (\Illuminate\Support\Facades\Auth::hasUser() && \Illuminate\Support\Facades\Auth::user()->garage_id) {
+                $model->garage_id = \Illuminate\Support\Facades\Auth::user()->garage_id;
+            }
+        });
     }
 }

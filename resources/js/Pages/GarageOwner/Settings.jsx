@@ -9,7 +9,6 @@ export default function Settings({ garage, auth }) {
         address: garage?.address || '',
         phone: garage?.phone || '',
         tagline: garage?.tagline || '',
-        logo_size: garage?.logo_size || 140,
         logo: null
     });
 
@@ -106,7 +105,7 @@ export default function Settings({ garage, auth }) {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-2">Thermal Bill Logo</label>
+                                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-2">Garage System Logo</label>
 
                                     <div
                                         onDragOver={e => { e.preventDefault(); setDragOver(true); }}
@@ -135,116 +134,6 @@ export default function Settings({ garage, auth }) {
                                     </div>
                                     <InputError message={errors.logo} className="mt-1" />
 
-                                    <div>
-                                        <div className="flex justify-between items-center mb-1">
-                                            <label className="block text-xs font-semibold text-gray-700 uppercase">Logo Size</label>
-                                            <span className="text-xs font-bold text-blue-600">{data.logo_size}px</span>
-                                        </div>
-                                        <input
-                                            type="range"
-                                            value={data.logo_size}
-                                            onChange={e => setData('logo_size', e.target.value)}
-                                            min="20" max="300"
-                                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                                        />
-                                        <p className="text-[10px] text-gray-400 mt-1">Adjust to scale the logo appropriately on the thermal bill.</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Thermal Bill Preview */}
-                            <div className="flex-1 max-w-sm ml-0 lg:ml-12">
-                                <h4 className="text-xs font-bold text-gray-700 uppercase mb-3">Live Thermal Bill Preview</h4>
-
-                                <div className="bg-white mx-auto shadow-[0_10px_30px_rgba(0,0,0,0.1)] relative" style={{ width: '74mm', padding: '4mm 3mm', fontFamily: "'Inter', system-ui, -apple-system, sans-serif", fontSize: '12px', color: '#000', minHeight: '400px' }}>
-                                    {/* Jagged top edge effect */}
-                                    <div className="absolute top-0 left-0 right-0 h-2" style={{ backgroundImage: 'linear-gradient(135deg, transparent 50%, #fff 50%), linear-gradient(45deg, #fff 50%, transparent 50%)', backgroundSize: '8px 8px', backgroundPosition: '0 -4px', transform: 'rotate(180deg)', marginTop: '-8px' }}></div>
-
-                                    {/* Header */}
-                                    <div className="text-center" style={{ marginBottom: '12px' }}>
-                                        {previewUrl ? (
-                                            <img src={previewUrl} alt="Logo" style={{ maxWidth: `${data.logo_size}px`, height: 'auto', filter: 'grayscale(100%) contrast(1.2)', display: 'inline-block' }} />
-                                        ) : (
-                                            <div className="text-xs text-gray-400 italic py-2">No Logo</div>
-                                        )}
-                                    </div>
-
-                                    <div className="text-center" style={{ fontSize: '18px', letterSpacing: '-0.03em', fontWeight: 800, marginBottom: '2px' }}>
-                                        {data.name || 'AUTO SERVICE'}
-                                    </div>
-
-                                    {data.tagline && (
-                                        <div className="text-center" style={{ fontSize: '10px', marginBottom: '2px' }}>{data.tagline}</div>
-                                    )}
-
-                                    {data.phone && (
-                                        <div className="text-center" style={{ fontSize: '10px' }}>📞 {data.phone}</div>
-                                    )}
-
-                                    {data.address && (
-                                        <div className="text-center" style={{ fontSize: '10px' }}>{data.address}</div>
-                                    )}
-
-                                    <div style={{ borderTop: '1.5px dashed #000', margin: '8px 0' }}></div>
-
-                                    {/* Details */}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontSize: '12px' }}>
-                                        <span style={{ flex: 1, textAlign: 'left' }}>Bill No:</span>
-                                        <span style={{ fontWeight: 800, textAlign: 'right' }}>ORD-9999</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontSize: '12px' }}>
-                                        <span style={{ flex: 1, textAlign: 'left' }}>Date:</span>
-                                        <span style={{ fontWeight: 800, textAlign: 'right' }}>{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontSize: '12px' }}>
-                                        <span style={{ flex: 1, textAlign: 'left' }}>Vehicle:</span>
-                                        <span style={{ fontWeight: 800, textAlign: 'right' }}>XYZ-1234</span>
-                                    </div>
-
-                                    <div style={{ borderTop: '1.5px dashed #000', margin: '8px 0' }}></div>
-
-                                    {/* Sample Items */}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', marginBottom: '2px' }}>
-                                        <span style={{ fontWeight: 700, fontSize: '12px', display: 'block', wordBreak: 'break-word' }}>Full Engine Service</span>
-                                        <span style={{ fontWeight: 800 }}>Rs.12,000.00</span>
-                                    </div>
-                                    <div style={{ fontSize: '12px', marginBottom: '6px' }}>
-                                        1 x Rs.12,000.00
-                                    </div>
-
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', marginBottom: '2px' }}>
-                                        <span style={{ fontWeight: 700, fontSize: '12px', display: 'block', wordBreak: 'break-word' }}>Engine Oil</span>
-                                        <span style={{ fontWeight: 800 }}>Rs.4,500.00</span>
-                                    </div>
-                                    <div style={{ fontSize: '12px', marginBottom: '6px' }}>
-                                        3 x Rs.1,500.00
-                                    </div>
-
-                                    <div style={{ borderTop: '1.5px dashed #000', margin: '8px 0' }}></div>
-
-                                    {/* Totals */}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontWeight: 900, fontSize: '15px', borderTop: '2px solid #000', paddingTop: '6px', marginTop: '6px' }}>
-                                        <span>TOTAL</span>
-                                        <span>Rs.16,500.00</span>
-                                    </div>
-
-                                    <div style={{ textAlign: 'center', margin: '8px 0' }}>
-                                        <span style={{ display: 'inline-block', border: '1.5px solid #000', padding: '4px 10px', marginTop: '6px', fontSize: '12px', fontWeight: 800, borderRadius: '6px' }}>
-                                            ✓ PAID IN FULL
-                                        </span>
-                                    </div>
-
-                                    <div style={{ borderTop: '1.5px dashed #000', margin: '8px 0' }}></div>
-
-                                    <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '13px', marginTop: '8px' }}>
-                                        Thank you! Drive safely
-                                    </div>
-                                    <div style={{ textAlign: 'center', fontSize: '12px', marginTop: '8px' }}>
-                                        Powered by DSRZone
-                                    </div>
-
-                                    {/* Jagged bottom edge effect */}
-                                    <div className="absolute bottom-0 left-0 right-0 h-2" style={{ backgroundImage: 'linear-gradient(135deg, transparent 50%, #fff 50%), linear-gradient(45deg, #fff 50%, transparent 50%)', backgroundSize: '8px 8px', marginBottom: '-8px' }}></div>
                                 </div>
                             </div>
                         </form>

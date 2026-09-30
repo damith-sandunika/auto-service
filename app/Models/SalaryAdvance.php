@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToGarage;
 
 class SalaryAdvance extends Model
 {
+    use BelongsToGarage;
     use HasFactory;
 
     protected $fillable = ['user_id', 'amount', 'date', 'reason', 'status'];

@@ -28,11 +28,10 @@ class SettingController extends Controller
             'address' => 'required|string',
             'phone' => 'required|string',
             'tagline' => 'nullable|string',
-            'logo_size' => 'nullable|integer|min:20|max:300',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        $garage->update($request->only('name', 'address', 'phone', 'tagline', 'logo_size'));
+        $garage->update($request->only('name', 'address', 'phone', 'tagline'));
 
         if ($request->hasFile('logo')) {
             if ($garage->logo_path) {
