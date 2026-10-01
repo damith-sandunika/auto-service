@@ -103,6 +103,10 @@ Route::middleware('auth')->group(function () {
 
         // Vehicles & Customers
         Route::get('vehicles', [\App\Http\Controllers\GarageOwner\VehicleDirectoryController::class, 'index'])->name('vehicles.index');
+        Route::get('vehicles/search', [\App\Http\Controllers\GarageOwner\GlobalVehicleController::class, 'search'])->name('vehicles.search');
+        Route::get('vehicles/{vehicle}/profile', [\App\Http\Controllers\GarageOwner\GlobalVehicleController::class, 'show'])->name('vehicles.profile');
+        Route::get('vehicles/{vehicle}/print', [\App\Http\Controllers\GarageOwner\GlobalVehicleController::class, 'printReport'])->name('vehicles.print');
+        Route::patch('vehicles/{vehicle}/owner', [\App\Http\Controllers\GarageOwner\GlobalVehicleController::class, 'updateOwner'])->name('vehicles.owner.update');
         Route::post('vehicles/customers', [\App\Http\Controllers\GarageOwner\VehicleDirectoryController::class, 'storeCustomer'])->name('customers.store');
         Route::post('vehicles', [\App\Http\Controllers\GarageOwner\VehicleDirectoryController::class, 'storeVehicle'])->name('vehicles.store');
         Route::delete('vehicles/{vehicle}', [\App\Http\Controllers\GarageOwner\VehicleDirectoryController::class, 'destroyVehicle'])->name('vehicles.destroy');

@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@media print { 
+    nav, header, aside, .print-hidden { 
+        display: none !important; 
+    } 
+}

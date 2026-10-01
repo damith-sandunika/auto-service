@@ -11,6 +11,26 @@ export default function VehiclesIndex({ customers, vehicles }) {
     const { auth } = usePage().props;
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
     const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+
+    const handleSearch = async (e) => {
+        setSearchQuery(e.target.value);
+        if (e.target.value.length > 2) {
+            setIsSearching(true);
+            try {
+                const res = await fetch(route('owner.vehicles.search') + '?q=' + e.target.value);
+                const data = await res.json();
+                setSearchResults(data);
+            } catch (error) {
+                console.error("Search failed", error);
+            }
+            setIsSearching(false);
+        } else {
+            setSearchResults([]);
+        }
+    };
 
     // Customer Form
     const { data: customerData, setData: setCustomerData, post: postCustomer, processing: customerProcessing, errors: customerErrors, reset: customerReset } = useForm({
@@ -80,6 +100,55 @@ export default function VehiclesIndex({ customers, vehicles }) {
 
             <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6">
                 
+                {/* Global Search Bar */}
+                <div className="mb-8 relative">
+                    <div className="relative max-w-2xl mx-auto">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Search Global Vehicle Registry by Number Plate..."
+                            className="block w-full pl-10 pr-3 py-4 border border-slate-200 rounded-2xl leading-5 bg-white shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-bold text-lg uppercase transition-all"
+                            value={searchQuery}
+                            onChange={handleSearch}
+                        />
+                        {isSearching && (
+                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Search Results Dropdown */}
+                    {searchResults.length > 0 && (
+                        <div className="absolute z-10 w-full max-w-2xl mx-auto left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden">
+                            <ul className="divide-y divide-slate-100">
+                                {searchResults.map(v => (
+                                    <li key={v.id}>
+                                        <a href={route('owner.vehicles.profile', v.id)} className="block hover:bg-slate-50 p-4 transition-colors">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-lg font-black text-slate-800 uppercase">{v.vehicle_number}</p>
+                                                    <p className="text-sm text-slate-500">{v.make} {v.model}</p>
+                                                </div>
+                                                <div className="text-blue-600 font-bold text-sm flex items-center gap-1">
+                                                    View Profile
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm text-slate-600">
@@ -109,6 +178,7 @@ export default function VehiclesIndex({ customers, vehicles }) {
                                                 {vehicle.owner?.phone || 'N/A'}
                                             </td>
                                             <td className="px-6 py-4 text-right space-x-3">
+                                                <a href={route('owner.vehicles.profile', vehicle.id)} className="text-blue-600 hover:text-blue-800 font-bold text-[11px] uppercase tracking-wider">Profile</a>
                                                 <button onClick={() => deleteVehicle(vehicle.id)} className="text-red-500 hover:text-red-700 font-bold text-[11px] uppercase tracking-wider">Remove</button>
                                             </td>
                                         </tr>

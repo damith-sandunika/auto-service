@@ -92,13 +92,42 @@ class PosController extends Controller
             // Handle Vehicle
             $vehicleId = $request->vehicle_id;
             if (!$vehicleId && $request->new_vehicle_number) {
-                $vehicle = Vehicle::create([
-                    'garage_id' => $garageId,
-                    'owner_id' => $customerId,
-                    'vehicle_number' => $request->new_vehicle_number,
-                    'make' => $request->new_vehicle_make ?? 'Unknown',
-                    'model' => $request->new_vehicle_model ?? 'Unknown'
-                ]);
+                $vehicle = Vehicle::where('vehicle_number', $request->new_vehicle_number)->first();
+                if (!$vehicle) {
+                    $vehicle = Vehicle::create([
+                        'garage_id' => $garageId,
+                        'owner_id' => $customerId,
+                        'vehicle_number' => $request->new_vehicle_number,
+                        'make' => $request->new_vehicle_make ?? 'Unknown',
+                        'model' => $request->new_vehicle_model ?? 'Unknown'
+                    ]);
+                    
+                    \App\Models\VehicleOwner::create([
+                        'vehicle_id' => $vehicle->id,
+                        'customer_id' => $customerId,
+                        'garage_id' => $garageId,
+                        'is_current' => true,
+                        'start_date' => now()
+                    ]);
+                } else {
+                    // Update current owner globally since this garage is taking over
+                    if ($vehicle->owner_id != $customerId) {
+                        \App\Models\VehicleOwner::where('vehicle_id', $vehicle->id)->where('is_current', true)->update([
+                            'is_current' => false,
+                            'end_date' => now()
+                        ]);
+                        
+                        \App\Models\VehicleOwner::create([
+                            'vehicle_id' => $vehicle->id,
+                            'customer_id' => $customerId,
+                            'garage_id' => $garageId,
+                            'is_current' => true,
+                            'start_date' => now()
+                        ]);
+                        $vehicle->update(['owner_id' => $customerId]);
+                    }
+                }
+                
                 $vehicleId = $vehicle->id;
             }
 

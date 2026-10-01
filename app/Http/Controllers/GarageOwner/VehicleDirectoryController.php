@@ -65,15 +65,51 @@ class VehicleDirectoryController extends Controller
             'year' => 'nullable|integer',
         ]);
 
-        Vehicle::create([
-            'owner_id' => $request->owner_id,
-            'vehicle_number' => $request->vehicle_number,
-            'make' => $request->make,
-            'model' => $request->model,
-            'year' => $request->year,
-        ]);
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            $vehicle = Vehicle::where('vehicle_number', $request->vehicle_number)->first();
+            
+            if (!$vehicle) {
+                $vehicle = Vehicle::create([
+                    'owner_id' => $request->owner_id,
+                    'vehicle_number' => $request->vehicle_number,
+                    'make' => $request->make,
+                    'model' => $request->model,
+                    'year' => $request->year,
+                    'garage_id' => Auth::user()->garage_id,
+                ]);
 
-        return back()->with('success', 'Vehicle added successfully.');
+                \App\Models\VehicleOwner::create([
+                    'vehicle_id' => $vehicle->id,
+                    'customer_id' => $request->owner_id,
+                    'garage_id' => Auth::user()->garage_id,
+                    'is_current' => true,
+                    'start_date' => now()
+                ]);
+            } else {
+                if ($vehicle->owner_id != $request->owner_id) {
+                    \App\Models\VehicleOwner::where('vehicle_id', $vehicle->id)->where('is_current', true)->update([
+                        'is_current' => false,
+                        'end_date' => now()
+                    ]);
+                    
+                    \App\Models\VehicleOwner::create([
+                        'vehicle_id' => $vehicle->id,
+                        'customer_id' => $request->owner_id,
+                        'garage_id' => Auth::user()->garage_id,
+                        'is_current' => true,
+                        'start_date' => now()
+                    ]);
+                    $vehicle->update(['owner_id' => $request->owner_id]);
+                }
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+            return back()->with('success', 'Vehicle added successfully.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return back()->withErrors(['error' => 'Failed to add vehicle: ' . $e->getMessage()]);
+        }
     }
 
     public function destroyVehicle(Vehicle $vehicle)
