@@ -6,6 +6,7 @@ import Pagination from '@/Components/Pagination';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
+import SearchableSelect from '@/Components/SearchableSelect';
 
 export default function WarrantiesIndex({ warranties, customers, vehicles }) {
     const { auth } = usePage().props;
@@ -138,18 +139,24 @@ export default function WarrantiesIndex({ warranties, customers, vehicles }) {
                     <div className="space-y-4">
                         <div>
                             <InputLabel value="Customer" />
-                            <select className="w-full mt-1 bg-slate-50 border-slate-200 rounded-lg text-sm" value={data.customer_id} onChange={e => setData('customer_id', e.target.value)} required>
-                                <option value="">Select Customer</option>
-                                {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                            </select>
+                            <SearchableSelect 
+                                className="mt-1" 
+                                value={data.customer_id} 
+                                onChange={e => setData('customer_id', e.target.value)} 
+                                options={customers || []}
+                                placeholder="Select Customer"
+                            />
                             <InputError message={errors.customer_id} className="mt-1" />
                         </div>
                         <div>
                             <InputLabel value="Vehicle" />
-                            <select className="w-full mt-1 bg-slate-50 border-slate-200 rounded-lg text-sm" value={data.vehicle_id} onChange={e => setData('vehicle_id', e.target.value)} required>
-                                <option value="">Select Vehicle</option>
-                                {vehicles.map(v => <option key={v.id} value={v.id}>{v.vehicle_number}</option>)}
-                            </select>
+                            <SearchableSelect 
+                                className="mt-1" 
+                                value={data.vehicle_id} 
+                                onChange={e => setData('vehicle_id', e.target.value)} 
+                                options={vehicles || []}
+                                placeholder="Select Vehicle"
+                            />
                             <InputError message={errors.vehicle_id} className="mt-1" />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -184,11 +191,16 @@ export default function WarrantiesIndex({ warranties, customers, vehicles }) {
             <Modal show={isStatusModalOpen} onClose={() => setIsStatusModalOpen(false)} maxWidth="sm">
                 <form onSubmit={confirmStatusUpdate} className="p-6">
                     <h2 className="text-lg font-black text-slate-800 mb-6">Update Status</h2>
-                    <select className="w-full bg-slate-50 border-slate-200 rounded-lg text-sm mb-6" value={statusData.status} onChange={e => setStatusData('status', e.target.value)}>
-                        <option value="active">Active</option>
-                        <option value="expired">Expired</option>
-                        <option value="voided">Voided</option>
-                    </select>
+                    <SearchableSelect 
+                        className="mb-6" 
+                        value={statusData.status} 
+                        onChange={e => setStatusData('status', e.target.value)}
+                        options={[
+                            { value: 'active', label: 'Active' },
+                            { value: 'expired', label: 'Expired' },
+                            { value: 'voided', label: 'Voided' }
+                        ]}
+                    />
                     <div className="flex justify-end gap-3">
                         <button type="button" onClick={() => setIsStatusModalOpen(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold uppercase">Cancel</button>
                         <button type="submit" disabled={statusProcessing} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black uppercase disabled:opacity-50">Update</button>

@@ -3,64 +3,48 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\PaymentRecord;
+use App\Models\Subscription;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class BillingController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        return Inertia::render('SuperAdmin/Billing');
+        $billings = PaymentRecord::with('tenant')->latest()->get();
+        $garages = Tenant::all(); // keeping var name garages to not break frontend
+        
+        $activeSubscriptions = Subscription::where('status', 'active')->count();
+        $monthlyRevenue = PaymentRecord::where('status', 'approved')
+            ->whereMonth('payment_date', now()->month)
+            ->sum('amount');
+        $pendingPayments = PaymentRecord::where('status', 'pending')->count();
+
+        return Inertia::render('SuperAdmin/Billing', [
+            'billings' => $billings,
+            'garages' => $garages,
+            'stats' => [
+                'active_subscriptions' => $activeSubscriptions,
+                'monthly_revenue' => $monthlyRevenue,
+                'pending_payments' => $pendingPayments
+            ]
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
-    }
+        $request->validate([
+            'garage_id' => 'required|exists:tenants,id', // keeping param name to not break frontend
+            'amount' => 'required|numeric|min:0',
+            'payment_date' => 'required|date',
+            'status' => 'required|in:pending,approved,failed',
+            'reference_number' => 'nullable|string'
+        ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+        PaymentRecord::create($request->all());
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return redirect()->back()->with('success', 'Payment registered successfully');
     }
 }

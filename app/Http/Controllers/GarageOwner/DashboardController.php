@@ -19,7 +19,27 @@ class DashboardController extends Controller
     public function index(\App\Actions\Dashboard\GetDashboardDataAction $action)
     {
         $garage = \App\Models\Garage::where('owner_id', Auth::id())->first();
-        if (!$garage) abort(404);
+        
+        if (!$garage) {
+            // If no garage exists yet, return an empty dashboard state
+            // The owner should probably see a prompt to create a branch
+            return Inertia::render('GarageOwner/Dashboard', [
+                'stats' => ['activeJobs' => 0, 'todayRevenue' => 0, 'availableStaff' => '0 / 0', 'completedJobsToday' => 0],
+                'charts' => ['revenue' => [], 'jobs' => []],
+                'shift' => [
+                    'active' => false,
+                    'opening_cash' => 0,
+                    'current_balance' => 0,
+                    'cash_sales' => 0,
+                    'card_sales' => 0,
+                    'expenses' => 0,
+                    'opened_at' => null
+                ],
+                'recentJobs' => [],
+                'mechanics' => [],
+                'garage' => null
+            ]);
+        }
 
         $data = $action->execute($garage->id);
 

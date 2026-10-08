@@ -19,7 +19,6 @@ class GlobalVehicleController extends Controller
         if (!$query) return response()->json([]);
 
         $vehicles = Vehicle::where('vehicle_number', 'LIKE', "%{$query}%")
-            ->with('owner')
             ->limit(10)
             ->get();
             
@@ -28,7 +27,7 @@ class GlobalVehicleController extends Controller
 
     public function show(Request $request, Vehicle $vehicle)
     {
-        $vehicle->load('owner');
+        // removed load owner
 
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
@@ -83,7 +82,7 @@ class GlobalVehicleController extends Controller
 
     public function printReport(Request $request, Vehicle $vehicle)
     {
-        $vehicle->load('owner');
+        // removed load owner
 
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
@@ -153,8 +152,7 @@ class GlobalVehicleController extends Controller
                 'start_date' => now()
             ]);
 
-            // Update main vehicle table
-            $vehicle->update(['owner_id' => $request->customer_id]);
+            // Update main vehicle table removed
 
             DB::commit();
             return back()->with('success', 'Vehicle owner updated successfully.');

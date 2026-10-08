@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('vehicle_owners', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('vehicle_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('vehicle_id');
             $table->foreignId('customer_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('garage_id')->nullable()->constrained('garages')->nullOnDelete();
             $table->boolean('is_current')->default(true);

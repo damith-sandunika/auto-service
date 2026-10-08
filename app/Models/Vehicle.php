@@ -6,12 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Vehicle extends Model
 {
-    protected $fillable = ['vehicle_number', 'make', 'model', 'year', 'owner_id', 'garage_id'];
+    protected $connection = 'mysql'; // Explicitly central
 
-    public function owner()
-    {
-        return $this->belongsTo(User::class, 'owner_id');
-    }
+    protected $fillable = ['vehicle_number', 'make', 'model', 'year'];
 
     public function owners()
     {

@@ -22,8 +22,10 @@ class VehicleDirectoryController extends Controller
 
         $customerIds = $customers->pluck('id');
         
-        $vehicles = Vehicle::whereIn('owner_id', $customerIds)
-            ->with('owner')
+        $vehicleOwners = \App\Models\VehicleOwner::whereIn('customer_id', $customerIds)->get();
+        $vehicleIds = $vehicleOwners->pluck('vehicle_id');
+        
+        $vehicles = Vehicle::whereIn('id', $vehicleIds)
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -71,12 +73,10 @@ class VehicleDirectoryController extends Controller
             
             if (!$vehicle) {
                 $vehicle = Vehicle::create([
-                    'owner_id' => $request->owner_id,
                     'vehicle_number' => $request->vehicle_number,
                     'make' => $request->make,
                     'model' => $request->model,
                     'year' => $request->year,
-                    'garage_id' => Auth::user()->garage_id,
                 ]);
 
                 \App\Models\VehicleOwner::create([
@@ -86,8 +86,8 @@ class VehicleDirectoryController extends Controller
                     'is_current' => true,
                     'start_date' => now()
                 ]);
-            } else {
-                if ($vehicle->owner_id != $request->owner_id) {
+                $currentOwner = \App\Models\VehicleOwner::where('vehicle_id', $vehicle->id)->where('is_current', true)->first();
+                if (!$currentOwner || $currentOwner->customer_id != $request->owner_id) {
                     \App\Models\VehicleOwner::where('vehicle_id', $vehicle->id)->where('is_current', true)->update([
                         'is_current' => false,
                         'end_date' => now()
@@ -100,7 +100,6 @@ class VehicleDirectoryController extends Controller
                         'is_current' => true,
                         'start_date' => now()
                     ]);
-                    $vehicle->update(['owner_id' => $request->owner_id]);
                 }
             }
 
@@ -116,7 +115,8 @@ class VehicleDirectoryController extends Controller
     {
         // Simple check to ensure vehicle belongs to a customer in this garage
         $garageId = Auth::user()->garage_id;
-        $customer = User::find($vehicle->owner_id);
+        $currentOwner = \App\Models\VehicleOwner::where('vehicle_id', $vehicle->id)->where('is_current', true)->first();
+        $customer = $currentOwner ? User::find($currentOwner->customer_id) : null;
         
         if ($customer && $customer->garage_id === $garageId) {
             $vehicle->delete();

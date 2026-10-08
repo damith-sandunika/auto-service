@@ -4,6 +4,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
+import SearchableSelect from '@/Components/SearchableSelect';
 
 export default function InspectionsCreate({ vehicles }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -69,15 +70,13 @@ export default function InspectionsCreate({ vehicles }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <InputLabel value="Vehicle" />
-                                <select 
-                                    className="w-full mt-1 bg-slate-50 border-slate-200 rounded-lg text-sm"
+                                <SearchableSelect 
+                                    className="mt-1"
                                     value={data.vehicle_id}
                                     onChange={e => setData('vehicle_id', e.target.value)}
-                                    required
-                                >
-                                    <option value="">Select Vehicle</option>
-                                    {vehicles.map(v => <option key={v.id} value={v.id}>{v.vehicle_number} - {v.make} {v.model}</option>)}
-                                </select>
+                                    options={vehicles.map(v => ({ value: v.id, label: `${v.vehicle_number} - ${v.make} ${v.model}` }))}
+                                    placeholder="Select Vehicle"
+                                />
                                 <InputError message={errors.vehicle_id} className="mt-1" />
                             </div>
                             <div>

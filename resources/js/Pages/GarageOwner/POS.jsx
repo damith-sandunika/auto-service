@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
+import SearchableSelect from '@/Components/SearchableSelect';
 
 export default function POS({ auth, jobs, customers, vehicles, mechanics }) {
     const [isNewJobModalOpen, setIsNewJobModalOpen] = useState(false);
@@ -104,19 +105,19 @@ export default function POS({ auth, jobs, customers, vehicles, mechanics }) {
                             </div>
 
                             {!isNewCustomer ? (
-                                <select 
-                                    className="w-full rounded-lg border-slate-300 text-sm" 
-                                    value={data.customer_id} 
+                                <SearchableSelect 
+                                    options={customers.map(c => ({ value: c.id, label: `${c.name} (${c.phone || c.email})` }))}
+                                    value={data.customer_id}
                                     onChange={e => {
-                                        setData(prev => ({ ...prev, customer_id: e.target.value, vehicle_id: '' }));
-                                    }} 
-                                    required={!isNewCustomer}
-                                >
-                                    <option value="">Search & Select Customer...</option>
-                                    {customers.map(c => (
-                                        <option key={c.id} value={c.id}>{c.name} ({c.phone || c.email})</option>
-                                    ))}
-                                </select>
+                                        setData(prev => ({ 
+                                            ...prev, 
+                                            customer_id: e.target.value, 
+                                            vehicle_id: '' 
+                                        }));
+                                    }}
+                                    placeholder="Search & Select Customer..."
+                                    isClearable
+                                />
                             ) : (
                                 <div className="grid grid-cols-2 gap-3">
                                     <input type="text" placeholder="Full Name" className="w-full rounded-lg border-slate-300 text-sm" value={data.new_customer_name} onChange={e => setData('new_customer_name', e.target.value)} required={isNewCustomer} />
@@ -139,18 +140,14 @@ export default function POS({ auth, jobs, customers, vehicles, mechanics }) {
                             </div>
 
                             {!isNewVehicle ? (
-                                <select 
-                                    className="w-full rounded-lg border-slate-300 text-sm" 
-                                    value={data.vehicle_id} 
-                                    onChange={e => setData('vehicle_id', e.target.value)} 
-                                    required={!isNewVehicle}
-                                    disabled={!data.customer_id && !isNewCustomer}
-                                >
-                                    <option value="">Select a vehicle...</option>
-                                    {availableVehicles.map(v => (
-                                        <option key={v.id} value={v.id}>{v.vehicle_number} ({v.make} {v.model})</option>
-                                    ))}
-                                </select>
+                                <SearchableSelect 
+                                    options={availableVehicles.map(v => ({ value: v.id, label: `${v.vehicle_number} (${v.make} ${v.model})` }))}
+                                    value={data.vehicle_id}
+                                    onChange={e => setData('vehicle_id', e.target.value)}
+                                    placeholder="Select a vehicle..."
+                                    isDisabled={!data.customer_id && !isNewCustomer}
+                                    isClearable
+                                />
                             ) : (
                                 <div className="grid grid-cols-3 gap-3">
                                     <input type="text" placeholder="Plate Number (e.g. CAA-1234)" className="w-full rounded-lg border-slate-300 text-sm" value={data.new_vehicle_number} onChange={e => setData('new_vehicle_number', e.target.value)} required={isNewVehicle} />
@@ -165,12 +162,13 @@ export default function POS({ auth, jobs, customers, vehicles, mechanics }) {
                         {/* JOB DETAILS */}
                         <div>
                             <label className="block text-sm font-semibold mb-1">Assign Mechanic (Optional)</label>
-                            <select className="w-full rounded-lg border-slate-300 text-sm" value={data.mechanic_id} onChange={e => setData('mechanic_id', e.target.value)}>
-                                <option value="">None</option>
-                                {mechanics.map(m => (
-                                    <option key={m.id} value={m.id}>{m.name}</option>
-                                ))}
-                            </select>
+                            <SearchableSelect 
+                                options={mechanics.map(m => ({ value: m.id, label: m.name }))}
+                                value={data.mechanic_id}
+                                onChange={e => setData('mechanic_id', e.target.value)}
+                                placeholder="None"
+                                isClearable
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-semibold mb-1">Description / Notes</label>

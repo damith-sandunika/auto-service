@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Modal from '@/Components/Modal';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
+import SearchableSelect from '@/Components/SearchableSelect';
 import TextInput from '@/Components/TextInput';
 import PageHeader from '@/Components/PageHeader';
 import DataTable from '@/Components/DataTable';
@@ -87,13 +88,17 @@ export default function Expenses({ expenses }) {
                     <form onSubmit={submitForm} className="space-y-4">
                         <div>
                             <InputLabel htmlFor="category" value="Category" />
-                            <select id="category" className="mt-1 block w-full border-slate-200 rounded-md" value={data.category} onChange={(e) => setData('category', e.target.value)}>
-                                <option value="">-- Select --</option>
-                                <option value="utilities">Utilities (Water/Electricity)</option>
-                                <option value="spare_parts">Spare Parts</option>
-                                <option value="rent">Rent</option>
-                                <option value="other">Other</option>
-                            </select>
+                            <SearchableSelect
+                                className="mt-1"
+                                value={data.category}
+                                onChange={(e) => setData('category', e.target.value)}
+                                options={[
+                                    { value: 'utilities', label: 'Utilities (Water/Electricity)' },
+                                    { value: 'spare_parts', label: 'Spare Parts' },
+                                    { value: 'rent', label: 'Rent' },
+                                    { value: 'other', label: 'Other' }
+                                ]}
+                            />
                             <InputError message={errors.category} className="mt-2" />
                         </div>
                         <div>

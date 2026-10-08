@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('garage_id')->constrained()->cascadeOnDelete();
             $table->foreignId('customer_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('vehicle_id')->nullable()->constrained()->nullOnDelete();
+            $table->unsignedBigInteger('vehicle_id')->nullable();
             $table->date('appointment_date');
             $table->time('appointment_time');
             $table->string('status')->default('pending'); // pending, confirmed, cancelled, completed

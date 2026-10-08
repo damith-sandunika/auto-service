@@ -14,7 +14,10 @@ export default function Login({ status, canResetPassword }) {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('login'), {
+        
+        const loginRoute = route().current('tenant.login') ? route('tenant.login') : route('login');
+        
+        post(loginRoute, {
             onFinish: () => reset('password'),
         });
     };

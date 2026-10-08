@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('service_reminders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('garage_id')->constrained()->onDelete('cascade');
-            $table->foreignId('vehicle_id')->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('vehicle_id');
             $table->string('service_type'); // e.g. "Oil Change", "General Service"
             $table->date('due_date');
             $table->enum('status', ['pending', 'notified', 'completed', 'cancelled'])->default('pending');

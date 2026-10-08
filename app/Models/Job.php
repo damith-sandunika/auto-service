@@ -32,6 +32,11 @@ class Job extends Model
     {
         return $this->hasMany(JobItem::class);
     }
+    
+    public function media()
+    {
+        return $this->hasMany(JobMedia::class);
+    }
 
     public function payments()
     {

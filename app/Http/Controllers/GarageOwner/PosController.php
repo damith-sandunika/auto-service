@@ -26,6 +26,7 @@ class PosController extends Controller
     public function index()
     {
         $garageId = $this->getGarageId();
+        $garage = \App\Models\Garage::find($garageId);
 
         $activeSession = \App\Models\RegisterSession::where('garage_id', $garageId)
             ->where('status', 'open')
@@ -40,6 +41,13 @@ class PosController extends Controller
         $mechanics = User::where('role', 'garage_staff')->where('garage_id', $garageId)->get();
         $customers = User::where('role', 'vehicle_owner')->with('vehicles')->get();
         
+        $templates = [];
+        if ($garage && $garage->branch_category_id) {
+            $templates = \App\Models\ServiceTemplate::where('branch_category_id', $garage->branch_category_id)
+                ->where('is_active', true)
+                ->get();
+        }
+
         $jobs = Job::where('garage_id', $garageId)
             ->where('status', '!=', 'completed')
             ->with(['vehicle.owner', 'mechanic'])
@@ -51,7 +59,8 @@ class PosController extends Controller
             'inventory' => $inventory,
             'mechanics' => $mechanics,
             'customers' => $customers,
-            'jobs' => $jobs
+            'jobs' => $jobs,
+            'service_templates' => $templates
         ]);
     }
 

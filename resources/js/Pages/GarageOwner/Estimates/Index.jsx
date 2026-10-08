@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import Pagination from '@/Components/Pagination';
+import SearchableSelect from '@/Components/SearchableSelect';
 
 export default function EstimatesIndex({ estimates }) {
     const { auth } = usePage().props;
@@ -147,18 +148,18 @@ export default function EstimatesIndex({ estimates }) {
                     <p className="text-sm text-slate-600 font-medium mb-4">Select the current status of this estimate:</p>
                     
                     <div className="mb-6">
-                        <select
-                            className="w-full bg-slate-50 border-slate-200 text-slate-800 rounded-lg text-sm font-medium focus:ring-blue-500 focus:border-blue-500"
+                        <SearchableSelect
                             value={statusData.status}
                             onChange={(e) => setStatusData('status', e.target.value)}
-                            required
-                        >
-                            <option value="draft">Draft</option>
-                            <option value="sent">Sent to Customer</option>
-                            <option value="accepted">Accepted</option>
-                            <option value="rejected">Rejected</option>
-                            <option value="expired">Expired</option>
-                        </select>
+                            options={[
+                                { value: 'draft', label: 'Draft' },
+                                { value: 'sent', label: 'Sent to Customer' },
+                                { value: 'accepted', label: 'Accepted' },
+                                { value: 'rejected', label: 'Rejected' },
+                                { value: 'expired', label: 'Expired' }
+                            ]}
+                            isClearable={false}
+                        />
                     </div>
 
                     <div className="flex justify-end gap-3">

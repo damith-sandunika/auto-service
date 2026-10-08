@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('make')->nullable();
             $table->string('model')->nullable();
             $table->integer('year')->nullable();
-            $table->foreignId('owner_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
     }

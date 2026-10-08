@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('inspections', function (Blueprint $table) {
             $table->id();
             $table->foreignId('garage_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('vehicle_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('vehicle_id');
             $table->foreignId('inspector_id')->nullable()->constrained('users')->nullOnDelete();
             $table->date('inspection_date');
             $table->string('status')->default('pending'); // pending, completed

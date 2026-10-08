@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $tables = ['vehicles', 'payments', 'staff_profiles', 'staff_attendances', 'salary_advances', 'payrolls'];
+        $tables = ['payments', 'staff_profiles', 'staff_attendances', 'salary_advances', 'payrolls'];
 
         foreach ($tables as $tableName) {
             Schema::table($tableName, function (Blueprint $table) {
@@ -25,7 +25,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        $tables = ['vehicles', 'payments', 'staff_profiles', 'staff_attendances', 'salary_advances', 'payrolls'];
+        $tables = ['payments', 'staff_profiles', 'staff_attendances', 'salary_advances', 'payrolls'];
 
         foreach ($tables as $tableName) {
             Schema::table($tableName, function (Blueprint $table) {

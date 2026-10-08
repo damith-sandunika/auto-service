@@ -3,6 +3,7 @@ import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
+import SearchableSelect from '@/Components/SearchableSelect';
 import { useForm } from '@inertiajs/react';
 
 export default function TransactionModal({ isOpen, onClose, bankAccounts }) {
@@ -44,12 +45,15 @@ export default function TransactionModal({ isOpen, onClose, bankAccounts }) {
                     </div>
                     <div>
                         <InputLabel htmlFor="bank_account_id" value="Account" />
-                        <select id="bank_account_id" className="mt-1 block w-full border-slate-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500" value={data.bank_account_id} onChange={(e) => setData('bank_account_id', e.target.value)}>
-                            <option value="">Cash in Hand (Default)</option>
-                            {bankAccounts.map(b => (
-                                <option key={b.id} value={b.id}>{b.bank_name} - {b.account_number}</option>
-                            ))}
-                        </select>
+                        <SearchableSelect 
+                            className="mt-1"
+                            value={data.bank_account_id}
+                            onChange={(e) => setData('bank_account_id', e.target.value)}
+                            options={[
+                                { value: '', label: 'Cash in Hand (Default)' },
+                                ...bankAccounts.map(b => ({ value: b.id, label: `${b.bank_name} - ${b.account_number}` }))
+                            ]}
+                        />
                         <InputError message={errors.bank_account_id} className="mt-2" />
                     </div>
                     <div>

@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('garage_id')->constrained()->cascadeOnDelete();
             $table->foreignId('customer_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('vehicle_id')->nullable()->constrained()->nullOnDelete();
+            $table->unsignedBigInteger('vehicle_id')->nullable();
             $table->string('estimate_number')->unique();
             $table->date('estimate_date');
             $table->date('expiry_date')->nullable();

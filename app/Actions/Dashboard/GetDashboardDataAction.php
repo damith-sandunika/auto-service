@@ -116,6 +116,29 @@ class GetDashboardDataAction
             ];
         });
 
+        // Fetch mechanics and their attendance in 2 queries (No N+1)
+        $mechanics = User::where('role', 'garage_staff')
+            ->where('garage_id', $garage_id)
+            ->get();
+
+        $attendances = \App\Models\StaffAttendance::whereIn('user_id', $mechanics->pluck('id'))
+            ->whereDate('date', $today)
+            ->get()
+            ->keyBy('user_id');
+
+        $mechanicsData = $mechanics->map(function ($mechanic) use ($attendances) {
+            $attendance = $attendances->get($mechanic->id);
+            return [
+                'id' => $mechanic->id,
+                'name' => $mechanic->name,
+                'attendance' => $attendance ? [
+                    'status' => $attendance->status,
+                    'arrival_time' => $attendance->arrival_time,
+                    'departure_time' => $attendance->departure_time,
+                ] : null
+            ];
+        });
+
         return [
             'stats' => [
                 'activeJobs' => $stats['activeJobsCount'],
@@ -137,23 +160,7 @@ class GetDashboardDataAction
                 'opened_at' => $activeSession ? $activeSession->opened_at->format('h:i A') : null,
             ],
             'recentJobs' => $recentJobs,
-            'mechanics' => User::where('role', 'garage_staff')
-                ->where('garage_id', $garage_id)
-                ->get()
-                ->map(function ($mechanic) use ($today) {
-                    $attendance = \App\Models\StaffAttendance::where('user_id', $mechanic->id)
-                        ->whereDate('date', $today)
-                        ->first();
-                    return [
-                        'id' => $mechanic->id,
-                        'name' => $mechanic->name,
-                        'attendance' => $attendance ? [
-                            'status' => $attendance->status,
-                            'arrival_time' => $attendance->arrival_time,
-                            'departure_time' => $attendance->departure_time,
-                        ] : null
-                    ];
-                })
+            'mechanics' => $mechanicsData
         ];
     }
 }

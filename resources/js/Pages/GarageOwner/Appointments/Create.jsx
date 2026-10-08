@@ -4,6 +4,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
+import SearchableSelect from '@/Components/SearchableSelect';
 
 export default function AppointmentCreate({ customers, vehicles }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -50,34 +51,25 @@ export default function AppointmentCreate({ customers, vehicles }) {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <InputLabel htmlFor="customer_id" value="Select Customer" className="font-bold text-slate-700" />
-                                    <select
-                                        id="customer_id"
-                                        className="mt-1 block w-full bg-slate-50 border-slate-200 text-slate-800 rounded-lg text-sm font-medium focus:ring-blue-500 focus:border-blue-500"
+                                    <SearchableSelect
+                                        className="mt-1"
                                         value={data.customer_id}
                                         onChange={(e) => setData('customer_id', e.target.value)}
-                                        required
-                                    >
-                                        <option value="">-- Choose an existing customer --</option>
-                                        {customers.map(c => (
-                                            <option key={c.id} value={c.id}>{c.name} ({c.email})</option>
-                                        ))}
-                                    </select>
+                                        options={customers.map(c => ({ value: c.id, label: `${c.name} (${c.email})` }))}
+                                        placeholder="-- Choose an existing customer --"
+                                    />
                                     <InputError message={errors.customer_id} className="mt-2" />
                                 </div>
 
                                 <div>
                                     <InputLabel htmlFor="vehicle_id" value="Select Vehicle (Optional)" className="font-bold text-slate-700" />
-                                    <select
-                                        id="vehicle_id"
-                                        className="mt-1 block w-full bg-slate-50 border-slate-200 text-slate-800 rounded-lg text-sm font-medium focus:ring-blue-500 focus:border-blue-500"
+                                    <SearchableSelect
+                                        className="mt-1"
                                         value={data.vehicle_id}
                                         onChange={(e) => setData('vehicle_id', e.target.value)}
-                                    >
-                                        <option value="">-- No Vehicle Selected --</option>
-                                        {vehicles.filter(v => v.owner_id == data.customer_id || !data.customer_id).map(v => (
-                                            <option key={v.id} value={v.id}>{v.vehicle_number} - {v.make} {v.model}</option>
-                                        ))}
-                                    </select>
+                                        options={vehicles.filter(v => v.owner_id == data.customer_id || !data.customer_id).map(v => ({ value: v.id, label: `${v.vehicle_number} - ${v.make} ${v.model}` }))}
+                                        placeholder="-- No Vehicle Selected --"
+                                    />
                                     <InputError message={errors.vehicle_id} className="mt-2" />
                                     <p className="text-[10px] text-slate-400 mt-1 font-bold">Select a customer first to filter their vehicles.</p>
                                 </div>
@@ -123,16 +115,16 @@ export default function AppointmentCreate({ customers, vehicles }) {
                             <div className="space-y-6">
                                 <div>
                                     <InputLabel htmlFor="status" value="Initial Status" className="font-bold text-slate-700" />
-                                    <select
-                                        id="status"
-                                        className="mt-1 block w-full bg-slate-50 border-slate-200 text-slate-800 rounded-lg text-sm font-medium focus:ring-blue-500 focus:border-blue-500"
+                                    <SearchableSelect
+                                        className="mt-1"
                                         value={data.status}
                                         onChange={(e) => setData('status', e.target.value)}
-                                        required
-                                    >
-                                        <option value="pending">Pending Confirmation</option>
-                                        <option value="confirmed">Confirmed</option>
-                                    </select>
+                                        options={[
+                                            { value: 'pending', label: 'Pending Confirmation' },
+                                            { value: 'confirmed', label: 'Confirmed' }
+                                        ]}
+                                        isClearable={false}
+                                    />
                                     <InputError message={errors.status} className="mt-2" />
                                 </div>
 

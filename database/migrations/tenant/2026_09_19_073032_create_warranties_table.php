@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('garage_id')->constrained()->cascadeOnDelete();
             $table->foreignId('job_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('vehicle_id')->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('vehicle_id');
             $table->foreignId('customer_id')->constrained('users')->cascadeOnDelete();
             $table->string('warranty_period'); // e.g., '6 Months', '10,000 km'
             $table->date('start_date');

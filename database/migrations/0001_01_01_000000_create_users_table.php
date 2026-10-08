@@ -17,8 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['super_admin', 'garage_owner', 'garage_staff', 'vehicle_owner'])->default('vehicle_owner');
-            $table->unsignedBigInteger('garage_id')->nullable()->index();
+            $table->enum('role', ['saas_admin'])->default('saas_admin');
             $table->rememberToken();
             $table->timestamps();
         });

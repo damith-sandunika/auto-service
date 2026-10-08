@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('service_jobs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('garage_id')->constrained('garages')->onDelete('cascade');
-            $table->foreignId('vehicle_id')->constrained('vehicles')->onDelete('cascade');
+            $table->unsignedBigInteger('vehicle_id');
             $table->foreignId('assigned_mechanic_id')->nullable()->constrained('users')->onDelete('set null');
             $table->enum('status', ['pending', 'in_progress', 'completed'])->default('pending');
             $table->text('description')->nullable();

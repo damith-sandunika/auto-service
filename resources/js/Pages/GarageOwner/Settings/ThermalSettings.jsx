@@ -2,6 +2,7 @@ import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
 import ThermalPreview from '@/Components/Invoice/ThermalPreview';
+import SearchableSelect from '@/Components/SearchableSelect';
 
 export default function ThermalSettings({ settings }) {
     let parsedLogoSize = parseInt(settings.logo_size) || 100;
@@ -94,10 +95,16 @@ export default function ThermalSettings({ settings }) {
                                 )}
                                 <div className="pt-2">
                                     <label className="text-xs font-bold text-slate-500 uppercase">Paper Width</label>
-                                    <select className="w-full text-sm rounded-lg mt-1" value={data.paper_width} onChange={e => setData('paper_width', e.target.value)}>
-                                        <option value="80mm">80mm (Standard POS Receipt)</option>
-                                        <option value="58mm">58mm (Small POS Receipt)</option>
-                                    </select>
+                                    <SearchableSelect 
+                                        className="mt-1" 
+                                        value={data.paper_width} 
+                                        onChange={e => setData('paper_width', e.target.value)}
+                                        options={[
+                                            { value: '80mm', label: '80mm (Standard POS Receipt)' },
+                                            { value: '58mm', label: '58mm (Small POS Receipt)' }
+                                        ]}
+                                        isClearable={false}
+                                    />
                                 </div>
                             </div>
                         </div>

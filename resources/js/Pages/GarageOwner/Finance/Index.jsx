@@ -4,6 +4,7 @@ import { Head, usePage, router } from '@inertiajs/react';
 import Pagination from '@/Components/Pagination';
 import BankAccountModal from './Partials/BankAccountModal';
 import TransactionModal from './Partials/TransactionModal';
+import SearchableSelect from '@/Components/SearchableSelect';
 
 export default function FinanceIndex({ bankAccounts, transactions, summary, filters }) {
     const { auth } = usePage().props;
@@ -113,10 +114,15 @@ export default function FinanceIndex({ bankAccounts, transactions, summary, filt
                     <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-end gap-3">
                         <div className="w-full sm:w-auto">
                             <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Account</label>
-                            <select className="w-full sm:w-48 text-sm border-slate-200 rounded-xl py-2" value={filterState.account_id} onChange={e => setFilterState({...filterState, account_id: e.target.value})}>
-                                <option value="">All Accounts & Cash</option>
-                                {bankAccounts.map(b => <option key={b.id} value={b.id}>{b.bank_name}</option>)}
-                            </select>
+                            <SearchableSelect 
+                                className="w-full sm:w-48 text-sm" 
+                                value={filterState.account_id} 
+                                onChange={e => setFilterState({...filterState, account_id: e.target.value})}
+                                options={[
+                                    { value: '', label: 'All Accounts & Cash' },
+                                    ...bankAccounts.map(b => ({ value: b.id, label: b.bank_name }))
+                                ]}
+                            />
                         </div>
                         <div className="w-full sm:w-auto">
                             <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Start Date</label>
