@@ -10,17 +10,18 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+use App\Traits\JobAccessTrait;
+
 class JobWorkspacePaymentController extends Controller
 {
+    use JobAccessTrait;
     public function addPayment(Request $request, Job $job)
     {
-        if ($job->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($job->garage_id);
 
         $validated = $request->validate([
             'amount' => 'required|numeric|min:0',
-            'payment_method' => 'required|string|in:cash,card,bank_transfer',
+            'payment_method' => 'required|string|in:cash,card,bank_transfer,credit',
         ]);
 
         DB::beginTransaction();
@@ -54,26 +55,50 @@ class JobWorkspacePaymentController extends Controller
 
     public function updateDiscount(Request $request, Job $job)
     {
-        if ($job->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($job->garage_id);
         $request->validate(['discount' => 'required|numeric|min:0']);
         $job->update(['discount' => $request->discount]);
+
+        if ($job->invoice) {
+            $oldDiscount = $job->invoice->discount ?? 0;
+            $oldTotal = max(0, $job->invoice->total_amount - $oldDiscount);
+
+            $job->invoice->discount = $request->discount;
+            $job->invoice->save();
+
+            $newTotal = max(0, $job->invoice->total_amount - $request->discount);
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('job_timelines')) {
+                \App\Models\JobTimeline::create([
+                    'garage_id' => $job->garage_id,
+                    'job_id' => $job->id,
+                    'user_id' => Auth::id(),
+                    'action' => 'correction',
+                    'description' => json_encode([
+                        'type' => 'discount_updated',
+                        'title' => 'Discount Updated',
+                        'old_discount' => $oldDiscount,
+                        'new_discount' => $request->discount,
+                        'old_total' => $oldTotal,
+                        'new_total' => $newTotal
+                    ])
+                ]);
+            }
+        }
+
         return back()->with('success', 'Discount updated.');
     }
 
     public function complete(Job $job)
     {
-        if ($job->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($job->garage_id);
         
         DB::beginTransaction();
         try {
             $job->status = 'completed';
             $job->save();
 
-            $invoiceNumber = 'INV-' . \App\Services\SequenceGenerator::getNextNumber($job->garage_id, 'invoice');
+            $invoiceNumber = (string) \App\Services\SequenceGenerator::getNextNumber($job->garage_id, 'invoice');
 
             $invoice = \App\Models\Invoice::firstOrCreate(
                 ['job_id' => $job->id, 'garage_id' => $job->garage_id],

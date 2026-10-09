@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 
-export default function Sidebar({ user, activeGarage, sidebarOpen, setSidebarOpen, isCollapsed, setIsCollapsed, isOthersOpen, setIsOthersOpen, navLinks }) {
+export default function Sidebar({ user, activeGarage, sidebarOpen, setSidebarOpen, isCollapsed, setIsCollapsed, openDropdowns, setOpenDropdowns, navLinks }) {
     return (
         <aside
             className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-white/80 backdrop-blur-xl border-r border-slate-200/60 transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'w-20' : 'w-64'}`}
@@ -10,7 +10,7 @@ export default function Sidebar({ user, activeGarage, sidebarOpen, setSidebarOpe
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
                 <div className={`w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-xl shadow-blue-500/20 mb-2 ring-2 ring-white transition-all duration-300 text-blue-600 ${!isCollapsed && 'w-16 h-16 rounded-[1.25rem] ring-4 mb-3'}`}>
-                    <img src={activeGarage?.logo_path ? `/storage/${activeGarage.logo_path}` : (activeGarage?.logo_url || "/images/auto-service-logo.png")} alt="Auto Service" className={`${isCollapsed ? 'w-8 h-8' : 'w-10 h-10'} object-contain`} />
+                    <img src={activeGarage?.logo_path ? `/tenant-media/${activeGarage.logo_path}` : (activeGarage?.logo_url || "/images/auto-service-logo.png")} alt="Auto Service" className={`${isCollapsed ? 'w-8 h-8' : 'w-10 h-10'} object-contain`} />
                 </div>
                 {!isCollapsed && (
                     <div className="animate-fade-in">
@@ -28,21 +28,21 @@ export default function Sidebar({ user, activeGarage, sidebarOpen, setSidebarOpe
                                 <button
                                     onClick={() => {
                                         if (isCollapsed) setIsCollapsed(false);
-                                        setIsOthersOpen(!isOthersOpen);
+                                        setOpenDropdowns(prev => ({ ...prev, [link.name]: !prev[link.name] }));
                                     }}
-                                    className={`w-full flex items-center justify-between gap-3 py-2.5 rounded-xl transition-all duration-200 ${isCollapsed ? 'justify-center px-0' : 'px-3'} ${link.active || isOthersOpen ? 'bg-blue-50/50 text-blue-700 shadow-sm ring-1 ring-blue-100/50' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
+                                    className={`w-full flex items-center justify-between gap-3 py-2.5 rounded-xl transition-all duration-200 ${isCollapsed ? 'justify-center px-0' : 'px-3'} ${link.active || openDropdowns?.[link.name] ? 'bg-blue-50/50 text-blue-700 shadow-sm ring-1 ring-blue-100/50' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'}`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <span className={link.active || isOthersOpen ? 'opacity-100' : 'opacity-80'}>{link.icon}</span>
+                                        <span className={link.active || openDropdowns?.[link.name] ? 'opacity-100' : 'opacity-80'}>{link.icon}</span>
                                         {!isCollapsed && <span className="text-[13px] font-semibold">{link.name}</span>}
                                     </div>
                                     {!isCollapsed && (
-                                        <svg className={`w-4 h-4 transition-transform duration-200 ${isOthersOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                                        <svg className={`w-4 h-4 transition-transform duration-200 ${openDropdowns?.[link.name] ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                                     )}
                                 </button>
                                 
                                 {!isCollapsed && (
-                                    <div className={`overflow-hidden transition-all duration-300 ${isOthersOpen ? 'max-h-64 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
+                                    <div className={`overflow-hidden transition-all duration-300 ${openDropdowns?.[link.name] ? 'max-h-64 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
                                         <div className="pl-9 pr-3 py-1.5 space-y-1 relative before:content-[''] before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200 rounded-lg">
                                             {link.subItems.map(subItem => (
                                                 <Link
@@ -106,3 +106,4 @@ export default function Sidebar({ user, activeGarage, sidebarOpen, setSidebarOpe
         </aside>
     );
 }
+

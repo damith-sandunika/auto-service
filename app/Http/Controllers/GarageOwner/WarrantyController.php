@@ -9,12 +9,14 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\JobAccessTrait;
 
 class WarrantyController extends Controller
 {
-    public function index()
+    use JobAccessTrait;
+    public function index(Request $request)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
 
         $warranties = Warranty::where('garage_id', $garageId)
             ->with(['vehicle', 'customer'])
@@ -38,7 +40,7 @@ class WarrantyController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'vehicle_id' => 'required|exists:vehicles,id',
+            'vehicle_id' => 'required|exists:mysql.vehicles,id',
             'customer_id' => 'required|exists:users,id',
             'warranty_period' => 'required|string',
             'start_date' => 'required|date',
@@ -47,7 +49,7 @@ class WarrantyController extends Controller
         ]);
 
         Warranty::create([
-            'garage_id' => Auth::user()->garage_id,
+            'garage_id' => $this->getGarageId($request),
             'vehicle_id' => $request->vehicle_id,
             'customer_id' => $request->customer_id,
             'warranty_period' => $request->warranty_period,
@@ -62,7 +64,7 @@ class WarrantyController extends Controller
 
     public function updateStatus(Request $request, Warranty $warranty)
     {
-        if ($warranty->garage_id !== Auth::user()->garage_id) abort(403);
+        $this->checkGarageAccess($warranty->garage_id);
 
         $request->validate([
             'status' => 'required|in:active,expired,voided',
@@ -75,7 +77,7 @@ class WarrantyController extends Controller
 
     public function destroy(Warranty $warranty)
     {
-        if ($warranty->garage_id !== Auth::user()->garage_id) abort(403);
+        $this->checkGarageAccess($warranty->garage_id);
         $warranty->delete();
         return back()->with('success', 'Warranty deleted.');
     }

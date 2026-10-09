@@ -22,4 +22,16 @@ class ServiceReminder extends Model
     {
         return $this->belongsTo(Vehicle::class);
     }
+
+    public function owner()
+    {
+        return $this->hasOneThrough(
+            User::class,
+            VehicleOwner::class,
+            'vehicle_id',
+            'id',
+            'vehicle_id',
+            'customer_id'
+        );
+    }
 }

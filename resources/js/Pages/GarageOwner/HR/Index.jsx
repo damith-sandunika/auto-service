@@ -8,7 +8,7 @@ import StaffProfileModal from './Partials/StaffProfileModal';
 import AttendanceModal from './Partials/AttendanceModal';
 import CreateStaffModal from './Partials/CreateStaffModal';
 
-export default function HRIndex({ staff }) {
+export default function HRIndex({ staff, garages, roles }) {
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
     const [isCreateStaffModalOpen, setIsCreateStaffModalOpen] = useState(false);
@@ -47,9 +47,9 @@ export default function HRIndex({ staff }) {
                 </div>
             </div>
 
-            <StaffProfileModal show={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} selectedStaff={selectedStaff} />
+            <StaffProfileModal show={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)} selectedStaff={selectedStaff} garages={garages} roles={roles} />
             <AttendanceModal show={isAttendanceModalOpen} onClose={() => setIsAttendanceModalOpen(false)} selectedStaff={selectedStaff} />
-            <CreateStaffModal show={isCreateStaffModalOpen} onClose={() => setIsCreateStaffModalOpen(false)} />
+            <CreateStaffModal show={isCreateStaffModalOpen} onClose={() => setIsCreateStaffModalOpen(false)} garages={garages} roles={roles} />
         </AuthenticatedLayout>
     );
 }

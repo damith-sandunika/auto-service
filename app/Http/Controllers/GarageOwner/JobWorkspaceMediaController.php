@@ -9,13 +9,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
+use App\Traits\JobAccessTrait;
+
 class JobWorkspaceMediaController extends Controller
 {
+    use JobAccessTrait;
     public function uploadMedia(Request $request, Job $job)
     {
-        if ($job->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($job->garage_id);
 
         $request->validate([
             'media' => 'required|file|mimes:mp4,mov,avi,jpeg,png,jpg|max:51200', // max 50MB
@@ -44,9 +45,7 @@ class JobWorkspaceMediaController extends Controller
 
     public function deleteMedia(JobMedia $media)
     {
-        if ($media->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($media->garage_id);
 
         try {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($media->file_path);

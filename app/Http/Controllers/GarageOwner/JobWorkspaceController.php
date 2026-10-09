@@ -16,19 +16,20 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
+use App\Traits\JobAccessTrait;
+
 class JobWorkspaceController extends Controller
 {
+    use JobAccessTrait;
     public function show(Job $job)
     {
-        if ($job->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($job->garage_id);
 
-        $job->load(['vehicle.owner', 'mechanic', 'items', 'payments', 'notes.user', 'media']);
+        $job->load(['vehicle', 'owner', 'mechanic', 'items.location', 'payments', 'notes.user', 'media', 'invoice']);
         
-        $inventory = Inventory::where('garage_id', Auth::user()->garage_id)->get(['id', 'item_name', 'price', 'quantity']);
-        $services = ServiceCatalog::where('garage_id', Auth::user()->garage_id)->get(['id', 'service_name', 'default_price as price']);
-        $suppliers = \App\Models\Supplier::where('garage_id', Auth::user()->garage_id)->get(['id', 'name', 'phone']);
+        $inventory = Inventory::where('garage_id', $job->garage_id)->get(['id', 'item_name', 'price', 'quantity']);
+        $services = ServiceCatalog::where('garage_id', $job->garage_id)->get(['id', 'service_name', 'default_price as price']);
+        $suppliers = \App\Models\Supplier::where('garage_id', $job->garage_id)->get(['id', 'name', 'phone']);
 
         return Inertia::render('GarageOwner/Jobs/Workspace', [
             'job' => $job,
@@ -40,11 +41,9 @@ class JobWorkspaceController extends Controller
 
     public function print(Request $request, Job $job)
     {
-        if ($job->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($job->garage_id);
 
-        $job->load(['vehicle.owner', 'items', 'mechanic']);
+        $job->load(['vehicle', 'owner', 'items', 'mechanic']);
         $garage = \App\Models\Garage::find($job->garage_id);
         
         if ($request->type === 'thermal') {
@@ -64,7 +63,7 @@ class JobWorkspaceController extends Controller
         // Mock invoice for the React component
         $invoice = (object)[
             'id' => $job->id,
-            'invoice_number' => 'EST-' . str_pad($job->id, 5, '0', STR_PAD_LEFT),
+            'invoice_number' => (string) $job->id,
             'created_at' => $job->created_at,
             'total_amount' => $job->total_cost,
             'discount' => 0,

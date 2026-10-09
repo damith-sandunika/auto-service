@@ -8,12 +8,14 @@ use Inertia\Inertia;
 
 use App\Models\ServiceCatalog;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\JobAccessTrait;
 
 class ServiceCatalogController extends Controller
 {
-    public function index()
+    use JobAccessTrait;
+    public function index(Request $request)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
         $services = ServiceCatalog::where('garage_id', $garageId)->paginate(20);
 
         return Inertia::render('GarageOwner/Services', [
@@ -29,7 +31,7 @@ class ServiceCatalogController extends Controller
             'default_price' => 'required|numeric|min:0',
         ]);
 
-        $validated['garage_id'] = Auth::user()->garage_id;
+        $validated['garage_id'] = $this->getGarageId($request);
         
         ServiceCatalog::create($validated);
         return redirect()->back()->with('success', 'Service added successfully.');
@@ -37,7 +39,8 @@ class ServiceCatalogController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $service = ServiceCatalog::where('garage_id', Auth::user()->garage_id)->findOrFail($id);
+        $service = ServiceCatalog::findOrFail($id);
+        $this->checkGarageAccess($service->garage_id);
 
         $validated = $request->validate([
             'service_name' => 'required|string|max:255',
@@ -51,7 +54,8 @@ class ServiceCatalogController extends Controller
 
     public function destroy(string $id)
     {
-        $service = ServiceCatalog::where('garage_id', Auth::user()->garage_id)->findOrFail($id);
+        $service = ServiceCatalog::findOrFail($id);
+        $this->checkGarageAccess($service->garage_id);
         $service->delete();
         
         return redirect()->back()->with('success', 'Service deleted successfully.');

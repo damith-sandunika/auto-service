@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class VehicleOwner extends Model
 {
+    protected $connection = 'tenant';
+
     protected $fillable = [
         'vehicle_id',
         'customer_id',

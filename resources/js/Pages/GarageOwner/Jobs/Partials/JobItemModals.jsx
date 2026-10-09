@@ -19,10 +19,19 @@ export default function JobItemModals({ job, inventory, services, suppliers, isA
                 <form onSubmit={submit('part', () => onClose('part'))} className="p-6">
                     <h2 className="text-xl font-bold mb-4">Add Part</h2>
                     <div className="space-y-4">
-                        <SearchableSelect onChange={e => {
-                            const part = inventory.find(i => i.id == e.target.value);
-                            if (part) setData({ ...data, item_type: 'part', item_id: part.id, description: part.item_name, price: part.price });
-                        }} options={inventory.map(i => ({ value: i.id, label: `${i.item_name} (Qty: ${i.quantity}) - LKR ${i.price}` }))} placeholder="Select Part..." />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Select Part</label>
+                                <SearchableSelect onChange={e => {
+                                    const part = inventory.find(i => i.id == e.target.value);
+                                    if (part) setData({ ...data, item_type: 'part', item_id: part.id, description: part.item_name, price: part.price });
+                                }} options={inventory.map(i => ({ value: i.id, label: `${i.item_name} (Qty: ${i.quantity}) - LKR ${i.price}` }))} placeholder="Select Part..." />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Quantity</label>
+                                <input type="number" step="0.01" min="0.01" className="w-full rounded-lg border-slate-300" value={data.quantity} onChange={e => setData('quantity', e.target.value)} required />
+                            </div>
+                        </div>
                         <button type="submit" className="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg mt-4" disabled={!data.item_id || processing}>Add Part to Job</button>
                     </div>
                 </form>
@@ -32,10 +41,19 @@ export default function JobItemModals({ job, inventory, services, suppliers, isA
                 <form onSubmit={submit('service', () => onClose('service'))} className="p-6">
                     <h2 className="text-xl font-bold mb-4">Add Service</h2>
                     <div className="space-y-4">
-                        <SearchableSelect onChange={e => {
-                            const service = services.find(s => s.id == e.target.value);
-                            if (service) setData({ ...data, item_type: 'service', item_id: service.id, description: service.name, price: service.price });
-                        }} options={services.map(s => ({ value: s.id, label: `${s.name} - LKR ${s.price}` }))} placeholder="Select Service..." />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Select Service</label>
+                                <SearchableSelect onChange={e => {
+                                    const service = services.find(s => s.id == e.target.value);
+                                    if (service) setData({ ...data, item_type: 'service', item_id: service.id, description: service.name, price: service.price });
+                                }} options={services.map(s => ({ value: s.id, label: `${s.name} - LKR ${s.price}` }))} placeholder="Select Service..." />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold mb-1">Quantity</label>
+                                <input type="number" step="0.01" min="0.01" className="w-full rounded-lg border-slate-300" value={data.quantity} onChange={e => setData('quantity', e.target.value)} required />
+                            </div>
+                        </div>
                         <button type="submit" className="w-full bg-teal-600 text-white font-bold py-2.5 rounded-lg mt-4" disabled={!data.item_id || processing}>Add Service to Job</button>
                     </div>
                 </form>
@@ -49,7 +67,10 @@ export default function JobItemModals({ job, inventory, services, suppliers, isA
                             <label className="block text-sm font-semibold mb-1">Select Supplier</label>
                             <SearchableSelect value={data.supplier_id} onChange={e => setData('supplier_id', e.target.value)} options={suppliers?.map(s => ({ value: s.id, label: `${s.name} (${s.phone || 'No Phone'})` }))} placeholder="Select Supplier..." />
                         </div>
-                        <div><label className="block text-sm font-semibold mb-1">Description</label><input type="text" className="w-full rounded-lg border-slate-300" value={data.description} onChange={e => setData('description', e.target.value)} required /></div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div><label className="block text-sm font-semibold mb-1">Description</label><input type="text" className="w-full rounded-lg border-slate-300" value={data.description} onChange={e => setData('description', e.target.value)} required /></div>
+                            <div><label className="block text-sm font-semibold mb-1">Quantity</label><input type="number" step="0.01" min="0.01" className="w-full rounded-lg border-slate-300" value={data.quantity} onChange={e => setData('quantity', e.target.value)} required /></div>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div><label className="block text-sm font-semibold mb-1">Customer Price</label><input type="number" step="0.01" className="w-full rounded-lg border-slate-300" value={data.price} onChange={e => setData('price', e.target.value)} required /></div>
                             <div><label className="block text-sm font-semibold mb-1">Our Cost (Payable)</label><input type="number" step="0.01" className="w-full rounded-lg border-slate-300" value={data.cost_price} onChange={e => setData('cost_price', e.target.value)} required /></div>

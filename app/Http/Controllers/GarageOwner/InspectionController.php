@@ -10,12 +10,14 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Traits\JobAccessTrait;
 
 class InspectionController extends Controller
 {
-    public function index()
+    use JobAccessTrait;
+    public function index(Request $request)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
 
         $inspections = Inspection::where('garage_id', $garageId)
             ->with(['vehicle', 'inspector'])
@@ -27,9 +29,9 @@ class InspectionController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
         $customerIds = \App\Models\User::where('garage_id', $garageId)->pluck('id');
         $vehicles = Vehicle::whereIn('owner_id', $customerIds)->get(['id', 'owner_id', 'vehicle_number', 'make', 'model']);
 
@@ -41,7 +43,7 @@ class InspectionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'vehicle_id' => 'required|exists:vehicles,id',
+            'vehicle_id' => 'required|exists:mysql.vehicles,id',
             'inspection_date' => 'required|date',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
@@ -55,7 +57,7 @@ class InspectionController extends Controller
 
         try {
             $inspection = Inspection::create([
-                'garage_id' => Auth::user()->garage_id,
+                'garage_id' => $this->getGarageId($request),
                 'vehicle_id' => $request->vehicle_id,
                 'inspector_id' => Auth::id(),
                 'inspection_date' => $request->inspection_date,
@@ -83,7 +85,7 @@ class InspectionController extends Controller
 
     public function show(Inspection $inspection)
     {
-        if ($inspection->garage_id !== Auth::user()->garage_id) abort(403);
+        $this->checkGarageAccess($inspection->garage_id);
         
         $inspection->load(['vehicle', 'inspector', 'items']);
         
@@ -94,7 +96,7 @@ class InspectionController extends Controller
 
     public function destroy(Inspection $inspection)
     {
-        if ($inspection->garage_id !== Auth::user()->garage_id) abort(403);
+        $this->checkGarageAccess($inspection->garage_id);
         $inspection->delete();
         return back()->with('success', 'Inspection deleted.');
     }

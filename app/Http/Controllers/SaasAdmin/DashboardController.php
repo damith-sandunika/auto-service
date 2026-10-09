@@ -16,10 +16,17 @@ class DashboardController extends Controller
         $totalCompanies = Tenant::count();
         $totalUsers = User::where('role', 'saas_admin')->count(); // Central users. (Tenant users are in their DBs, tracking total system users requires cross-db query, so we'll approximate or skip for now)
         
-        // Approximate total users by querying all tenant DBs (Optional, but let's just keep it simple)
-        $tenantUsers = 0;
-        Tenant::all()->runForEach(function () use (&$tenantUsers) {
-            $tenantUsers += DB::table('users')->count();
+        // Cache total users to prevent looping through 200+ DBs on every page load
+        $tenantUsers = \Illuminate\Support\Facades\Cache::remember('saas_total_tenant_users', 3600, function () {
+            $count = 0;
+            Tenant::chunk(50, function ($tenants) use (&$count) {
+                foreach ($tenants as $tenant) {
+                    $tenant->run(function () use (&$count) {
+                        $count += DB::table('users')->count();
+                    });
+                }
+            });
+            return $count;
         });
 
         $stats = [

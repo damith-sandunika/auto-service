@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router, Link } from '@inertiajs/react';
 import { useState, useRef, useEffect } from 'react';
 import InputError from '@/Components/InputError';
 
@@ -12,7 +12,7 @@ export default function Settings({ garage, auth }) {
         logo: null
     });
 
-    const [previewUrl, setPreviewUrl] = useState(garage?.logo_path ? `/storage/${garage.logo_path}` : null);
+    const [previewUrl, setPreviewUrl] = useState(garage?.logo_path ? `/tenant-media/${garage.logo_path}` : null);
     const [dragOver, setDragOver] = useState(false);
     const fileInputRef = useRef(null);
     const [fileName, setFileName] = useState('');
@@ -50,9 +50,11 @@ export default function Settings({ garage, auth }) {
         <AuthenticatedLayout 
             fullWidth={true}
             header={
-                <div className="text-left w-full">
-                    <h2 className="text-xl font-black text-black">System Settings</h2>
-                    <p className="text-xs font-bold text-blue-600 mt-1">Configure garage details and thermal bill appearance.</p>
+                <div className="flex justify-between items-center w-full">
+                    <div>
+                        <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">System Settings</h1>
+                        <p className="text-xs md:text-sm font-bold text-blue-600 mt-1">Configure garage details and system preferences</p>
+                    </div>
                 </div>
             }
             headerActions={
@@ -68,108 +70,59 @@ export default function Settings({ garage, auth }) {
             <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6">
 
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                    {/* Premium Horizontally Scrollable Tab Header */}
-                    <div className="p-3 border-b border-gray-100 bg-gray-50/50 overflow-x-auto scrollbar-hide">
-                        <div className="flex gap-2 w-max bg-gray-200/50 p-1 rounded-xl">
-                            <button className="px-5 py-2 text-sm font-bold rounded-lg bg-white text-blue-700 shadow-sm ring-1 ring-gray-200/50 transition-all duration-200">
-                                General Settings
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="p-6">
-                        <form onSubmit={submit} className="flex flex-col lg:flex-row gap-8">
-                            <div className="flex-1 space-y-5 max-w-xl">
+                    <div className="p-6 md:p-8">
+                        <form onSubmit={submit} className="flex flex-col lg:flex-row gap-10">
+                            {/* Left Column: Text Inputs */}
+                            <div className="flex-1 space-y-6">
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Garage / Business Name</label>
-                                    <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} required className="w-full text-sm border-gray-200 rounded-md focus:border-blue-500 focus:ring-blue-500" />
+                                    <label className="block text-xs font-black text-slate-700 uppercase mb-2">Garage / Business Name</label>
+                                    <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} required className="w-full text-sm font-medium border-slate-300 rounded-xl focus:border-blue-500 focus:ring-blue-500 shadow-sm px-4 py-2.5" />
                                     <InputError message={errors.name} className="mt-1" />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Address</label>
-                                    <input type="text" value={data.address} onChange={e => setData('address', e.target.value)} required className="w-full text-sm border-gray-200 rounded-md focus:border-blue-500 focus:ring-blue-500" />
-                                    <InputError message={errors.address} className="mt-1" />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Telephone Number</label>
-                                    <input type="text" value={data.phone} onChange={e => setData('phone', e.target.value)} required className="w-full text-sm border-gray-200 rounded-md focus:border-blue-500 focus:ring-blue-500" />
-                                    <InputError message={errors.phone} className="mt-1" />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Tagline (Will appear on print bills)</label>
-                                    <input type="text" value={data.tagline} onChange={e => setData('tagline', e.target.value)} className="w-full text-sm border-gray-200 rounded-md focus:border-blue-500 focus:ring-blue-500" />
+                                    <label className="block text-xs font-black text-slate-700 uppercase mb-2">Tagline (Optional)</label>
+                                    <input type="text" value={data.tagline} onChange={e => setData('tagline', e.target.value)} className="w-full text-sm font-medium border-slate-300 rounded-xl focus:border-blue-500 focus:ring-blue-500 shadow-sm px-4 py-2.5" placeholder="e.g. Your Trusted Partner" />
                                     <InputError message={errors.tagline} className="mt-1" />
                                 </div>
+                            </div>
 
-                                <div>
-                                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-2">Garage System Logo</label>
-
+                            {/* Right Column: Logo Upload */}
+                            <div className="w-full lg:w-1/3 xl:w-1/4 shrink-0">
+                                <label className="block text-xs font-black text-slate-700 uppercase mb-2">Garage System Logo</label>
+                                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 h-[230px] flex flex-col">
                                     <div
                                         onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                                         onDragLeave={() => setDragOver(false)}
                                         onDrop={handleDrop}
                                         onClick={() => fileInputRef.current.click()}
-                                        className={`relative flex flex-col items-center justify-center w-full h-36 border-2 rounded-xl cursor-pointer transition-colors group mb-4 ${dragOver ? 'border-blue-500 bg-blue-50' : 'border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100'}`}
+                                        className={`relative flex-1 flex flex-col items-center justify-center w-full border-2 rounded-xl cursor-pointer transition-colors group ${dragOver ? 'border-blue-500 bg-blue-100/50' : 'border-dashed border-slate-300 bg-white hover:bg-slate-100'}`}
                                     >
                                         <input ref={fileInputRef} type="file" accept="image/png, image/jpeg, image/jpg" className="hidden" onChange={handleLogoChange} />
 
                                         {!previewUrl ? (
-                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                                <svg className="w-8 h-8 mb-3 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <div className="flex flex-col items-center justify-center p-4 text-center">
+                                                <svg className="w-8 h-8 mb-3 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                                 </svg>
-                                                <p className="mb-1 text-sm text-gray-500"><span className="font-bold text-gray-700">Click to upload</span> or drag and drop</p>
-                                                <p className="text-xs text-gray-400">PNG, JPG (Recommended: Black & White)</p>
+                                                <p className="mb-1 text-xs text-slate-500"><span className="font-bold text-slate-700">Click to upload</span> or drag</p>
+                                                <p className="text-[10px] font-bold text-slate-400">PNG, JPG (B&W recommended)</p>
                                             </div>
                                         ) : (
-                                            <div className="flex flex-col items-center justify-center p-2 h-full w-full">
-                                                <img src={previewUrl} alt="Preview" className="h-20 object-contain mb-2" style={{ filter: 'grayscale(100%) contrast(1.2)' }} />
-                                                <p className="text-xs font-bold text-blue-600 truncate max-w-[80%]">{fileName || 'Current Active Logo'}</p>
-                                                <p className="text-[10px] text-gray-400 mt-0.5 group-hover:text-gray-500">Click or drag to replace</p>
+                                            <div className="flex flex-col items-center justify-center p-4 h-full w-full">
+                                                <img src={previewUrl} alt="Preview" className="h-24 object-contain mb-3 drop-shadow-sm" style={{ filter: 'grayscale(100%) contrast(1.2)' }} />
+                                                <p className="text-xs font-bold text-blue-600 truncate w-[90%] text-center">{fileName || 'Current Active Logo'}</p>
                                             </div>
                                         )}
                                     </div>
-                                    <InputError message={errors.logo} className="mt-1" />
-
+                                    <InputError message={errors.logo} className="mt-1 text-center" />
                                 </div>
                             </div>
                         </form>
-                    </div>
-                </div>
-
-                {/* Danger Zone */}
-                <div className="mt-8 bg-white rounded-2xl border border-red-200 shadow-sm overflow-hidden mb-6">
-                    <div className="p-4 border-b border-red-100 bg-red-50">
-                        <h3 className="text-lg font-black text-red-700 flex items-center gap-2">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                            Danger Zone
-                        </h3>
-                    </div>
-                    <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                        <div className="flex-1">
-                            <h4 className="text-base font-bold text-gray-900 mb-1">Remove All Database & Branch</h4>
-                            <p className="text-sm text-gray-600">
-                                This will permanently remove all your branch data (Inventory, Jobs, Customers, Invoices, Expenses, Users). 
-                                <span className="font-bold text-red-600 block mt-1">Note: Vehicle history records are preserved globally, but your branch access and data will be wiped. This action cannot be undone!</span>
-                            </p>
-                        </div>
-                        <button 
-                            onClick={(e) => {
-                                e.preventDefault();
-                                if(confirm('Are you absolutely sure you want to remove all database and branch? This action CANNOT be undone!')) {
-                                    router.delete(route('settings.wipe'));
-                                }
-                            }}
-                            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-black text-sm rounded-xl transition-colors shadow-md shadow-red-500/20 whitespace-nowrap flex-shrink-0"
-                        >
-                            Remove All Database
-                        </button>
                     </div>
                 </div>
             </div>
         </AuthenticatedLayout>
     );
 }
+

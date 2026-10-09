@@ -13,12 +13,14 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Traits\JobAccessTrait;
 
 class EstimateController extends Controller
 {
-    public function index()
+    use JobAccessTrait;
+    public function index(Request $request)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
         
         $estimates = Estimate::where('garage_id', $garageId)
             ->with(['customer', 'vehicle'])
@@ -30,9 +32,9 @@ class EstimateController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
         
         $customers = User::where('garage_id', $garageId)
             ->where('role', 'vehicle_owner')
@@ -58,7 +60,7 @@ class EstimateController extends Controller
     {
         $request->validate([
             'customer_id' => 'required|exists:users,id',
-            'vehicle_id' => 'nullable|exists:vehicles,id',
+            'vehicle_id' => 'nullable|exists:mysql.vehicles,id',
             'estimate_date' => 'required|date',
             'expiry_date' => 'nullable|date',
             'items' => 'required|array|min:1',
@@ -75,7 +77,7 @@ class EstimateController extends Controller
         DB::beginTransaction();
 
         try {
-            $garageId = Auth::user()->garage_id;
+            $garageId = $this->getGarageId($request);
             
             // Calculate totals
             $subtotal = 0;
@@ -128,9 +130,7 @@ class EstimateController extends Controller
 
     public function show(Estimate $estimate)
     {
-        if ($estimate->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($estimate->garage_id);
 
         $estimate->load(['customer', 'vehicle', 'items', 'garage']);
         
@@ -141,9 +141,7 @@ class EstimateController extends Controller
     
     public function updateStatus(Request $request, Estimate $estimate)
     {
-        if ($estimate->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($estimate->garage_id);
 
         $request->validate([
             'status' => 'required|in:draft,sent,accepted,rejected,expired',
@@ -158,9 +156,7 @@ class EstimateController extends Controller
 
     public function destroy(Estimate $estimate)
     {
-        if ($estimate->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($estimate->garage_id);
 
         $estimate->delete();
 

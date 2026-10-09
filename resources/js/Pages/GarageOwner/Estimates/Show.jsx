@@ -40,7 +40,7 @@ export default function EstimateShow({ estimate }) {
                     <div className="flex justify-between items-start border-b-2 border-slate-100 pb-8 mb-8">
                         <div>
                             {estimate.garage?.logo ? (
-                                <img src={`/storage/${estimate.garage.logo}`} alt="Logo" className="h-16 object-contain mb-4" />
+                                <img src={`/tenant-media/${estimate.garage.logo}`} alt="Logo" className="h-16 object-contain mb-4" />
                             ) : (
                                 <div className="h-16 w-32 bg-slate-100 rounded-lg flex items-center justify-center font-black text-slate-400 mb-4">LOGO</div>
                             )}
@@ -144,3 +144,4 @@ export default function EstimateShow({ estimate }) {
         </AuthenticatedLayout>
     );
 }
+

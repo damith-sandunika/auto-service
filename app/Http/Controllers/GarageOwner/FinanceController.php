@@ -9,12 +9,14 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Traits\JobAccessTrait;
 
 class FinanceController extends Controller
 {
+    use JobAccessTrait;
     public function index(Request $request)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
 
         $bankAccounts = BankAccount::where('garage_id', $garageId)->get();
         
@@ -67,7 +69,7 @@ class FinanceController extends Controller
             'initial_balance' => 'required|numeric|min:0',
         ]);
 
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
 
         DB::beginTransaction();
 
@@ -114,7 +116,7 @@ class FinanceController extends Controller
             'date' => 'required|date',
         ]);
 
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
 
         DB::beginTransaction();
 
@@ -131,7 +133,8 @@ class FinanceController extends Controller
 
             // Update Bank Balance if a bank account is selected
             if ($request->bank_account_id) {
-                $bank = BankAccount::where('garage_id', $garageId)->where('id', $request->bank_account_id)->firstOrFail();
+                $bank = BankAccount::findOrFail($request->bank_account_id);
+                $this->checkGarageAccess($bank->garage_id);
                 if ($request->type === 'in') {
                     $bank->current_balance += $request->amount;
                 } else {

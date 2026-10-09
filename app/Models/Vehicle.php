@@ -15,6 +15,7 @@ class Vehicle extends Model
         return $this->hasMany(VehicleOwner::class);
     }
 
+
     public function jobs()
     {
         return $this->hasMany(Job::class);

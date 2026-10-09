@@ -42,6 +42,7 @@ class DashboardController extends Controller
         }
 
         $data = $action->execute($garage->id);
+        $data['garage'] = $garage;
 
         return Inertia::render('GarageOwner/Dashboard', $data);
     }

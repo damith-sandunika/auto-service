@@ -6,16 +6,16 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 
-export default function Staff({ staff }) {
+export default function Staff({ staff, garages }) {
     const { auth } = usePage().props;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [editingStaff, setEditingStaff] = useState(null);
     const [deletingStaff, setDeletingStaff] = useState(null);
-    const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({ name: '', email: '', password: '' });
+    const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({ name: '', email: '', password: '', role: 'staff', garage_id: '' });
 
     const openCreate = () => { clearErrors(); reset(); setEditingStaff(null); setIsModalOpen(true); };
-    const openEdit = (s) => { clearErrors(); setData({ name: s.name, email: s.email, password: '' }); setEditingStaff(s); setIsModalOpen(true); };
+    const openEdit = (s) => { clearErrors(); setData({ name: s.name, email: s.email, password: '', role: s.role, garage_id: s.garage_id || '' }); setEditingStaff(s); setIsModalOpen(true); };
     const openDelete = (s) => { setDeletingStaff(s); setIsDeleteModalOpen(true); };
     const closeModal = () => { setIsModalOpen(false); setTimeout(() => { reset(); clearErrors(); }, 200); };
     const closeDeleteModal = () => { setIsDeleteModalOpen(false); setTimeout(() => setDeletingStaff(null), 200); };
@@ -32,7 +32,7 @@ export default function Staff({ staff }) {
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm text-slate-600">
-                            <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider"><tr><th className="px-6 py-4">Name</th><th className="px-6 py-4">Role</th><th className="px-6 py-4">Status</th><th className="px-6 py-4 text-right">Actions</th></tr></thead>
+                            <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider"><tr><th className="px-6 py-4">Name</th><th className="px-6 py-4">Role</th><th className="px-6 py-4">Branch</th><th className="px-6 py-4">Status</th><th className="px-6 py-4 text-right">Actions</th></tr></thead>
                             <tbody className="divide-y divide-slate-100">
                                 {staff?.length > 0 ? staff.map((s) => (
                                     <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
@@ -40,7 +40,8 @@ export default function Staff({ staff }) {
                                             <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-black">{s.name.charAt(0)}</div>
                                             <div><div className="font-bold text-slate-800">{s.name} {s.id === auth.user.id && <span className="text-xs text-emerald-600 font-bold ml-1">(You)</span>}</div><div className="text-xs text-slate-500 mt-0.5">{s.email}</div></div>
                                         </td>
-                                        <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider ${s.role === 'garage_owner' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-blue-100 text-blue-700 border border-blue-200'}`}>{s.role === 'garage_owner' ? 'Garage Owner' : 'Mechanic / Staff'}</span></td>
+                                        <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider ${s.role === 'branch_admin' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-blue-100 text-blue-700 border border-blue-200'}`}>{s.role.replace('_', ' ')}</span></td>
+                                        <td className="px-6 py-4 font-bold text-slate-600 text-xs">{s.garage?.name || '-'}</td>
                                         <td className="px-6 py-4"><div className="flex items-center gap-1.5 font-bold text-emerald-600 text-xs uppercase tracking-wider"><div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>Active</div></td>
                                         <td className="px-6 py-4 text-right space-x-3">
                                             <button onClick={() => openEdit(s)} className="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider">Edit</button>
@@ -62,6 +63,29 @@ export default function Staff({ staff }) {
                     <form onSubmit={submitForm} className="space-y-4">
                         <div><InputLabel htmlFor="name" value="Full Name" /><TextInput id="name" type="text" className="mt-1 block w-full bg-slate-50 border-slate-200 text-slate-800" value={data.name} onChange={(e) => setData('name', e.target.value)} /><InputError message={errors.name} className="mt-2" /></div>
                         <div><InputLabel htmlFor="email" value="Email Address" /><TextInput id="email" type="email" className="mt-1 block w-full bg-slate-50 border-slate-200 text-slate-800" value={data.email} onChange={(e) => setData('email', e.target.value)} /><InputError message={errors.email} className="mt-2" /></div>
+                        
+                        <div>
+                            <InputLabel htmlFor="role" value="Role" />
+                            <select id="role" className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-slate-50 border-slate-200 text-slate-800" value={data.role} onChange={(e) => setData('role', e.target.value)}>
+                                <option value="staff">Staff / Mechanic</option>
+                                <option value="branch_admin">Branch Admin</option>
+                                <option value="accountant">Accountant</option>
+                                <option value="hr_manager">HR Manager</option>
+                            </select>
+                            <InputError message={errors.role} className="mt-2" />
+                        </div>
+
+                        {auth.user.role === 'company_owner' && (
+                            <div>
+                                <InputLabel htmlFor="garage_id" value="Assign Branch" />
+                                <select id="garage_id" className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm bg-slate-50 border-slate-200 text-slate-800" value={data.garage_id} onChange={(e) => setData('garage_id', e.target.value)}>
+                                    <option value="">-- Select Branch --</option>
+                                    {garages?.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                                </select>
+                                <InputError message={errors.garage_id} className="mt-2" />
+                            </div>
+                        )}
+
                         <div><InputLabel htmlFor="password" value={editingStaff ? 'Password (leave blank to keep current)' : 'Password'} /><TextInput id="password" type="password" className="mt-1 block w-full bg-slate-50 border-slate-200 text-slate-800" value={data.password} onChange={(e) => setData('password', e.target.value)} /><InputError message={errors.password} className="mt-2" /></div>
                         <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
                             <button type="button" onClick={closeModal} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-bold text-sm transition-colors">Cancel</button>

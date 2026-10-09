@@ -8,7 +8,16 @@ export default function JobCart({ job, inventory, services, suppliers, subTotal,
     const [isAddServiceOpen, setIsAddServiceOpen] = useState(false);
     const [isAddOutsourceOpen, setIsAddOutsourceOpen] = useState(false);
 
-    const updateQuantity = (item, action) => router.patch(route('owner.jobs.items.quantity', item.id), { action }, { preserveScroll: true });
+    const updateQuantityAction = (item, action, value = null) => {
+        router.patch(route('owner.jobs.items.quantity', item.id), { action, quantity: value }, { preserveScroll: true });
+    };
+
+    const handleQuantityChange = (item, e) => {
+        const val = e.target.value;
+        if (val && !isNaN(val) && parseFloat(val) > 0) {
+            updateQuantityAction(item, 'set', parseFloat(val));
+        }
+    };
     const deleteItem = (itemId) => { if (confirm('Are you sure you want to remove this item?')) router.delete(route('owner.jobs.items.destroy', itemId), { preserveScroll: true }); };
 
     const closeModal = (type) => {
@@ -33,14 +42,33 @@ export default function JobCart({ job, inventory, services, suppliers, subTotal,
                         job.items?.map(item => (
                             <div key={item.id} className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-2">
                                 <div className="flex justify-between items-start">
-                                    <div className="flex-1 pr-2"><p className="text-sm font-bold text-slate-800 leading-tight">{item.description}</p><p className="text-xs text-slate-500 capitalize mt-0.5">{item.item_type}</p></div>
+                                    <div className="flex-1 pr-2">
+                                        <p className="text-sm font-bold text-slate-800 leading-tight">{item.description}</p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <p className="text-xs text-slate-500 capitalize">{item.item_type}</p>
+                                            {item.location && (
+                                                <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">
+                                                    Stored at: {item.location.name}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
                                     <div className="text-right shrink-0"><p className="text-sm font-bold text-blue-600">LKR {(item.price * item.quantity).toFixed(2)}</p>{item.quantity > 1 && <p className="text-[9px] font-bold text-slate-400 mt-0.5">LKR {parseFloat(item.price).toFixed(2)} each</p>}</div>
                                 </div>
                                 <div className="flex justify-between items-center mt-1 pt-2 border-t border-slate-50">
                                     <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
-                                        <button type="button" onClick={() => updateQuantity(item, 'decrement')} disabled={item.quantity <= 1} className="w-6 h-6 flex items-center justify-center rounded-md bg-white text-slate-600 hover:text-slate-900 shadow-sm disabled:opacity-50 font-bold">-</button>
-                                        <span className="w-6 text-center text-xs font-bold text-slate-800">{item.quantity}</span>
-                                        <button type="button" onClick={() => updateQuantity(item, 'increment')} className="w-6 h-6 flex items-center justify-center rounded-md bg-white text-slate-600 hover:text-slate-900 shadow-sm font-bold">+</button>
+                                        <button type="button" onClick={() => updateQuantityAction(item, 'set', Math.max(0.01, parseFloat(item.quantity) - 1))} disabled={parseFloat(item.quantity) <= 0.01} className="w-6 h-6 flex items-center justify-center rounded-md bg-white text-slate-600 hover:text-slate-900 shadow-sm disabled:opacity-50 font-bold">-</button>
+                                        <input 
+                                            key={`qty-${item.id}-${item.quantity}`}
+                                            type="number" 
+                                            step="0.01" 
+                                            min="0.01"
+                                            defaultValue={item.quantity} 
+                                            onBlur={(e) => handleQuantityChange(item, e)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleQuantityChange(item, e); e.target.blur(); } }}
+                                            className="w-12 text-center text-xs font-bold text-slate-800 bg-transparent border-none focus:ring-0 p-0" 
+                                        />
+                                        <button type="button" onClick={() => updateQuantityAction(item, 'set', parseFloat(item.quantity) + 1)} className="w-6 h-6 flex items-center justify-center rounded-md bg-white text-slate-600 hover:text-slate-900 shadow-sm font-bold">+</button>
                                     </div>
                                     <button type="button" onClick={() => deleteItem(item.id)} className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors" title="Remove item">
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -61,9 +89,15 @@ export default function JobCart({ job, inventory, services, suppliers, subTotal,
                         <span className="font-bold text-rose-600 text-sm">- LKR {discount.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center mb-4 mt-2 pt-2 border-t border-slate-100"><span className="font-bold text-slate-600">Total</span><span className="text-2xl font-black text-slate-800">LKR {(subTotal - discount).toFixed(2)}</span></div>
-                    <Link href={route('owner.jobs.complete', job.id)} method="post" as="button" className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 shadow-md shadow-blue-500/20 text-center transition-all block">
-                        Complete &amp; Generate Invoice
-                    </Link>
+                    {['completed', 'done'].includes(job.status) ? (
+                        <Link href={route('owner.orders.show', job.invoice?.id || job.id)} className="w-full bg-slate-800 text-white font-bold py-3 rounded-xl hover:bg-slate-900 shadow-md shadow-slate-500/20 text-center transition-all block">
+                            Return to Order
+                        </Link>
+                    ) : (
+                        <Link href={route('owner.jobs.complete', job.id)} method="post" as="button" className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 shadow-md shadow-blue-500/20 text-center transition-all block">
+                            Complete &amp; Generate Order
+                        </Link>
+                    )}
                 </div>
             </div>
 

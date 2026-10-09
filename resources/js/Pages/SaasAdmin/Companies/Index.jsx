@@ -31,7 +31,7 @@ export default function CompaniesIndex({ companies }) {
                                 <tr><th className="px-6 py-4">ID</th><th className="px-6 py-4">Company Name</th><th className="px-6 py-4">Domain</th><th className="px-6 py-4">Database</th></tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {companies?.length > 0 ? companies.map(c => (
+                                {companies?.data?.length > 0 ? companies.data.map(c => (
                                     <tr key={c.id}>
                                         <td className="px-6 py-4 font-black">{c.id}</td>
                                         <td className="px-6 py-4 font-bold text-blue-600">{c.data?.company_name || c.id}</td>
@@ -48,6 +48,11 @@ export default function CompaniesIndex({ companies }) {
             <Modal show={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="md">
                 <div className="p-6">
                     <h2 className="text-xl font-black mb-6">Register New Company & DB</h2>
+                    {errors.error && (
+                        <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm font-bold">
+                            {errors.error}
+                        </div>
+                    )}
                     <form onSubmit={submit} className="space-y-4">
                         <div><InputLabel value="Company/Tenant ID (no spaces)" /><TextInput type="text" className="w-full mt-1" value={data.company_name} onChange={e => setData('company_name', e.target.value)} /><InputError message={errors.company_name} /></div>
                         <div><InputLabel value="Domain (e.g. abc.localhost)" /><TextInput type="text" className="w-full mt-1" value={data.domain} onChange={e => setData('domain', e.target.value)} /><InputError message={errors.domain} /></div>

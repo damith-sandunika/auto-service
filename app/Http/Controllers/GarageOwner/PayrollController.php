@@ -9,14 +9,15 @@ use App\Models\User;
 use App\Models\Payroll;
 use App\Models\Expense;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Traits\JobAccessTrait;
 
 class PayrollController extends Controller
 {
+    use JobAccessTrait;
     public function index(Request $request)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
         $month = $request->input('month', now()->format('Y-m')); // e.g., '2026-08'
         
         $carbonMonth = Carbon::createFromFormat('Y-m', $month);
@@ -26,20 +27,24 @@ class PayrollController extends Controller
         $staff = User::where('garage_id', $garageId)
             ->whereIn('role', ['garage_staff', 'garage_owner'])
             ->with(['staffProfile', 
-                'attendances' => function($q) use ($month) {
-                    $q->where('date', 'like', $month . '%');
-                },
-                'jobs' => function($q) use ($startOfMonth, $endOfMonth) {
-                    $q->whereBetween('created_at', [$startOfMonth, $endOfMonth])
-                      ->where('status', 'completed');
-                },
                 'payrolls' => function($q) use ($month) {
                     $q->where('month', $month);
-                },
-                'salaryAdvances' => function($q) {
-                    $q->where('status', 'pending');
                 }
             ])
+            ->withSum(['attendances' => function($q) use ($month) {
+                $q->where('date', 'like', $month . '%');
+            }], 'ot_hours')
+            ->withSum(['jobs' => function($q) use ($startOfMonth, $endOfMonth) {
+                $q->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                  ->where('status', 'completed');
+            }], 'total_cost')
+            ->withCount(['jobs' => function($q) use ($startOfMonth, $endOfMonth) {
+                $q->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+                  ->where('status', 'completed');
+            }])
+            ->withSum(['salaryAdvances' => function($q) {
+                $q->where('status', 'pending');
+            }], 'amount')
             ->paginate(20)
             ->through(function ($mechanic) use ($month) {
                 $profile = $mechanic->staffProfile;
@@ -59,15 +64,14 @@ class PayrollController extends Controller
                 $otRate = $profile ? $profile->ot_rate_per_hour : 0;
                 $commissionRate = $profile ? $profile->commission_rate : 0;
 
-                $totalOTHours = $mechanic->attendances->sum('ot_hours');
+                $totalOTHours = $mechanic->attendances_sum_ot_hours ?? 0;
                 $otPay = $totalOTHours * $otRate;
 
-                $totalJobRevenue = $mechanic->jobs->sum('total_cost');
+                $totalJobRevenue = $mechanic->jobs_sum_total_cost ?? 0;
                 $commissionPay = $totalJobRevenue * ($commissionRate / 100);
 
                 // Deduct any pending salary advances
-                $advanceDeductions = $mechanic->salaryAdvances->sum('amount');
-                $deductions = $advanceDeductions;
+                $deductions = $mechanic->salary_advances_sum_amount ?? 0;
                 
                 $netPay = $basicPay + $otPay + $commissionPay - $deductions;
 
@@ -81,7 +85,7 @@ class PayrollController extends Controller
                         'basic_pay' => $basicPay,
                         'ot_hours' => $totalOTHours,
                         'ot_pay' => $otPay,
-                        'jobs_completed' => $mechanic->jobs->count(),
+                        'jobs_completed' => $mechanic->jobs_count ?? 0,
                         'total_job_revenue' => $totalJobRevenue,
                         'commission_pay' => $commissionPay,
                         'deductions' => $deductions,
@@ -98,7 +102,7 @@ class PayrollController extends Controller
 
     public function store(Request $request, \App\Actions\HR\ProcessPayrollAction $processPayrollAction)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
         
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
@@ -110,7 +114,8 @@ class PayrollController extends Controller
             'net_pay' => 'required|numeric',
         ]);
 
-        $staffUser = User::where('garage_id', $garageId)->findOrFail($validated['user_id']);
+        $staffUser = User::findOrFail($validated['user_id']);
+        $this->checkGarageAccess($staffUser->garage_id);
 
         $processPayrollAction->execute($staffUser, $validated, $garageId);
 

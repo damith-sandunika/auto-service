@@ -3,7 +3,7 @@ import React from 'react';
 export default function InvoicePreview({ settings, originalLogo, realData = null, isPreview = true }) {
     // A sample preview data
     const data = realData || {
-        invoice_no: 'INV-10204',
+        invoice_no: '10204',
         date: new Date().toLocaleDateString(),
         customer_name: 'John Doe',
         vehicle_no: 'WP ABC-1234',
@@ -41,7 +41,7 @@ export default function InvoicePreview({ settings, originalLogo, realData = null
                     </div>
                 </div>
                 <div className="text-right">
-                    <h2 className="text-3xl font-black uppercase tracking-widest" style={{ color: settings?.primary_color || '#2563eb' }}>INVOICE</h2>
+                    <h2 className="text-3xl font-black uppercase tracking-widest" style={{ color: settings?.primary_color || '#2563eb' }}>ORDER</h2>
                     <p className="font-bold mt-2" style={{ fontSize: `${parseInt(settings.text_size) || 14}px` }}>#{data.invoice_no}</p>
                     <p style={{ fontSize: `${parseInt(settings.text_size) || 14}px` }}>Date: {data.date}</p>
                 </div>

@@ -19,6 +19,11 @@ class SettingController extends Controller
         ]);
     }
 
+    public function dangerZone()
+    {
+        return Inertia::render('GarageOwner/Settings/DangerZone');
+    }
+
     public function update(Request $request)
     {
 
@@ -51,23 +56,25 @@ class SettingController extends Controller
         $garage = \App\Models\Garage::where('owner_id', Auth::id())->first();
 
         if ($garage) {
-            // Delete related specific data
-            $garage->users()->where('id', '!=', Auth::id())->delete();
-            $garage->inventory()->delete();
-            $garage->expenses()->delete();
-            $garage->appointments()->delete();
-            $garage->suppliers()->delete();
-            $garage->purchaseOrders()->delete();
-            $garage->bankAccounts()->delete();
-            $garage->cashbookTransactions()->delete();
-            $garage->serviceReminders()->delete();
-            $garage->branchActivityLogs()->delete();
-            $garage->inspections()->delete();
-            $garage->estimates()->delete();
-            $garage->warranties()->delete();
+            \Illuminate\Support\Facades\DB::transaction(function () use ($garage) {
+                // Delete related specific data
+                $garage->users()->where('id', '!=', Auth::id())->delete();
+                $garage->inventory()->delete();
+                $garage->expenses()->delete();
+                $garage->appointments()->delete();
+                $garage->suppliers()->delete();
+                $garage->purchaseOrders()->delete();
+                $garage->bankAccounts()->delete();
+                $garage->cashbookTransactions()->delete();
+                $garage->serviceReminders()->delete();
+                $garage->branchActivityLogs()->delete();
+                $garage->inspections()->delete();
+                $garage->estimates()->delete();
+                $garage->warranties()->delete();
 
-            // Finally, soft delete the garage
-            $garage->delete();
+                // Finally, soft delete the garage
+                $garage->delete();
+            });
         }
 
         Auth::logout();

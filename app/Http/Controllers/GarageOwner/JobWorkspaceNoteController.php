@@ -8,13 +8,14 @@ use App\Models\JobNote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+use App\Traits\JobAccessTrait;
+
 class JobWorkspaceNoteController extends Controller
 {
+    use JobAccessTrait;
     public function storeNote(Request $request, Job $job)
     {
-        if ($job->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($job->garage_id);
         $request->validate([
             'title' => 'nullable|string', 
             'content' => 'required|string',
@@ -34,9 +35,7 @@ class JobWorkspaceNoteController extends Controller
 
     public function updateNote(Request $request, JobNote $note)
     {
-        if ($note->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($note->garage_id);
         $request->validate([
             'title' => 'nullable|string', 
             'content' => 'required|string',
@@ -54,9 +53,7 @@ class JobWorkspaceNoteController extends Controller
 
     public function destroyNote(JobNote $note)
     {
-        if ($note->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($note->garage_id);
         $note->delete();
         return back()->with('success', 'Note deleted.');
     }

@@ -56,7 +56,7 @@ export default function VehiclesIndex({ customers, vehicles }) {
                             <ul className="divide-y divide-slate-100">
                                 {searchResults.map(v => (
                                     <li key={v.id}>
-                                        <a href={route('owner.vehicles.profile', v.id)} className="block hover:bg-slate-50 p-4 transition-colors">
+                                        <a href="#" className="block hover:bg-slate-50 p-4 transition-colors">
                                             <div className="flex items-center justify-between">
                                                 <div><p className="text-lg font-black text-slate-800 uppercase">{v.vehicle_number}</p><p className="text-sm text-slate-500">{v.make} {v.model}</p></div>
                                                 <div className="text-blue-600 font-bold text-sm flex items-center gap-1">View Profile <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></div>
@@ -83,7 +83,7 @@ export default function VehiclesIndex({ customers, vehicles }) {
                                         <td className="px-6 py-4"><div className="font-bold text-slate-800">{vehicle.owner?.name}</div><div className="text-[10px] text-slate-500">{vehicle.owner?.email}</div></td>
                                         <td className="px-6 py-4 text-xs font-bold text-slate-600">{vehicle.owner?.phone || 'N/A'}</td>
                                         <td className="px-6 py-4 text-right space-x-3">
-                                            <a href={route('owner.vehicles.profile', vehicle.id)} className="text-blue-600 hover:text-blue-800 font-bold text-[11px] uppercase tracking-wider">Profile</a>
+                                            <a href="#" className="text-blue-600 hover:text-blue-800 font-bold text-[11px] uppercase tracking-wider">Profile</a>
                                             <button onClick={() => deleteVehicle(vehicle.id)} className="text-red-500 hover:text-red-700 font-bold text-[11px] uppercase tracking-wider">Remove</button>
                                         </td>
                                     </tr>

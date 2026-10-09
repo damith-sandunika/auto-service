@@ -12,7 +12,7 @@ class JobInspectionController extends Controller
     public function show(Job $job)
     {
         // For public access, we might want to ensure we only expose necessary data
-        $job->load(['vehicle.owner', 'garage', 'media']);
+        $job->load(['vehicle', 'owner', 'garage', 'media']);
 
         // Check if there are any media to show, otherwise we can still show the page but it will be empty
         // Or if the job is deleted or something

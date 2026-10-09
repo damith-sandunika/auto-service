@@ -8,12 +8,16 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Models\GarageThermalSetting;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Garage;
+use App\Traits\JobAccessTrait;
 
 class ThermalSettingController extends Controller
 {
-    public function edit()
+    use JobAccessTrait;
+    public function edit(Request $request)
     {
-        $garage = Auth::user()->garage;
+        $garageId = $this->getGarageId($request);
+        $garage = Garage::findOrFail($garageId);
         $settings = GarageThermalSetting::firstOrCreate(
             ['garage_id' => $garage->id],
             [
@@ -40,7 +44,7 @@ class ThermalSettingController extends Controller
 
     public function update(Request $request)
     {
-        $settings = GarageThermalSetting::where('garage_id', Auth::user()->garage_id)->firstOrFail();
+        $settings = GarageThermalSetting::where('garage_id', $this->getGarageId($request))->firstOrFail();
         
         $validated = $request->validate([
             'store_name' => 'nullable|string|max:255',

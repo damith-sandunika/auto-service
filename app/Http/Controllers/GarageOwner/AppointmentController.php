@@ -9,12 +9,14 @@ use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\JobAccessTrait;
 
 class AppointmentController extends Controller
 {
-    public function index()
+    use JobAccessTrait;
+    public function index(Request $request)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
         
         $appointments = Appointment::where('garage_id', $garageId)
             ->with(['customer', 'vehicle'])
@@ -32,9 +34,9 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
         $customers = User::where('garage_id', $garageId)
             ->where('role', 'vehicle_owner')
             ->get(['id', 'name', 'email']);
@@ -52,7 +54,7 @@ class AppointmentController extends Controller
     {
         $request->validate([
             'customer_id' => 'required|exists:users,id',
-            'vehicle_id' => 'nullable|exists:vehicles,id',
+            'vehicle_id' => 'nullable|exists:mysql.vehicles,id',
             'appointment_date' => 'required|date',
             'appointment_time' => 'required',
             'status' => 'required|in:pending,confirmed,completed,cancelled',
@@ -60,7 +62,7 @@ class AppointmentController extends Controller
         ]);
 
         Appointment::create([
-            'garage_id' => Auth::user()->garage_id,
+            'garage_id' => $this->getGarageId($request),
             'customer_id' => $request->customer_id,
             'vehicle_id' => $request->vehicle_id,
             'appointment_date' => $request->appointment_date,
@@ -74,9 +76,7 @@ class AppointmentController extends Controller
 
     public function update(Request $request, Appointment $appointment)
     {
-        if ($appointment->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($appointment->garage_id);
 
         $request->validate([
             'appointment_date' => 'required|date',
@@ -97,9 +97,7 @@ class AppointmentController extends Controller
 
     public function destroy(Appointment $appointment)
     {
-        if ($appointment->garage_id !== Auth::user()->garage_id) {
-            abort(403);
-        }
+        $this->checkGarageAccess($appointment->garage_id);
 
         $appointment->delete();
 

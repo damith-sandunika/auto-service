@@ -22,7 +22,7 @@ export default function InspectionView({ job }) {
                     </div>
                     {garage?.logo && (
                         <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm border border-slate-100">
-                            <img src={`/storage/${garage.logo}`} alt={garage.name} className="w-full h-full object-cover" />
+                            <img src={`/tenant-media/${garage.logo}`} alt={garage.name} className="w-full h-full object-cover" />
                         </div>
                     )}
                 </div>
@@ -58,7 +58,7 @@ export default function InspectionView({ job }) {
                                     <div className="w-full aspect-video bg-black flex items-center justify-center">
                                         {item.file_type === 'video' ? (
                                             <video 
-                                                src={`/storage/${item.file_path}`} 
+                                                src={`/tenant-media/${item.file_path}`} 
                                                 className="w-full h-full object-contain" 
                                                 controls 
                                                 playsInline
@@ -66,7 +66,7 @@ export default function InspectionView({ job }) {
                                             />
                                         ) : (
                                             <img 
-                                                src={`/storage/${item.file_path}`} 
+                                                src={`/tenant-media/${item.file_path}`} 
                                                 className="w-full h-full object-contain" 
                                                 alt={`Inspection Attachment ${index + 1}`} 
                                             />
@@ -100,3 +100,4 @@ export default function InspectionView({ job }) {
         </div>
     );
 }
+

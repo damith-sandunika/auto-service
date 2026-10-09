@@ -27,34 +27,43 @@ class CompanyController extends Controller
             'admin_password' => 'required|string|min:8',
         ]);
 
-        // Create Tenant DB
-        $tenant = Tenant::create([
-            'id' => $request->company_name, // Typically a slug, but id generator handles it if not provided
-            'company_name' => $request->company_name,
-        ]);
-
-        $inputDomain = $request->domain;
-        $centralDomain = config('tenancy.central_domains')[0] ?? 'localhost';
-        
-        // Auto-append .localhost or .autozone.dsrzone.com if the user just typed the prefix
-        if (!str_contains($inputDomain, '.')) {
-            $inputDomain = $inputDomain . '.' . $centralDomain;
-        }
-
-        // Create Domain
-        $tenant->domains()->create([
-            'domain' => $inputDomain
-        ]);
-
-        // Seed Company Owner in Tenant DB
-        $tenant->run(function () use ($request) {
-            \App\Models\User::create([
-                'name' => $request->admin_name,
-                'email' => $request->admin_email,
-                'password' => bcrypt($request->admin_password),
-                'role' => 'company_owner',
+        try {
+            // Create Tenant DB
+            $tenant = Tenant::create([
+                'id' => \Illuminate\Support\Str::slug($request->company_name), // Using slug for ID to avoid issues with spaces
+                'company_name' => $request->company_name,
             ]);
-        });
+
+            $inputDomain = $request->domain;
+            $centralDomain = config('tenancy.central_domains')[0] ?? 'localhost';
+            
+            // Auto-append .localhost or .autozone.dsrzone.com if the user just typed the prefix
+            if (!str_contains($inputDomain, '.')) {
+                $inputDomain = $inputDomain . '.' . $centralDomain;
+            }
+
+            // Create Domain
+            $tenant->domains()->create([
+                'domain' => $inputDomain
+            ]);
+
+            // Seed Company Owner in Tenant DB
+            $tenant->run(function () use ($request) {
+                \App\Models\User::create([
+                    'name' => $request->admin_name,
+                    'email' => $request->admin_email,
+                    'password' => bcrypt($request->admin_password),
+                    'role' => 'company_owner',
+                ]);
+            });
+
+        } catch (\Exception $e) {
+            if (isset($tenant)) {
+                // If tenant was created but something else failed, delete the tenant to drop the db
+                $tenant->delete(); 
+            }
+            return back()->withErrors(['error' => 'Failed to create company: ' . $e->getMessage()]);
+        }
 
         return redirect()->back()->with('success', 'Company created successfully with isolated database.');
     }

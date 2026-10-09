@@ -33,7 +33,7 @@ export default function OrderPaymentModal({ show, onClose, payingInvoice }) {
         <Modal show={show} onClose={onClose} maxWidth="sm">
             <div className="p-6">
                 <h2 className="text-lg font-black text-slate-800 mb-2">Record Payment</h2>
-                <p className="text-sm text-slate-500 mb-6 font-medium">Add a payment for {payingInvoice?.invoice_number}</p>
+                <p className="text-sm text-slate-500 mb-6 font-medium">Add a payment for Order #{payingInvoice?.invoice_number || payingInvoice?.id}</p>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <InputLabel htmlFor="amount" value="Amount (Rs.)" />
@@ -42,7 +42,7 @@ export default function OrderPaymentModal({ show, onClose, payingInvoice }) {
                     </div>
                     <div>
                         <InputLabel htmlFor="payment_method" value="Payment Method" />
-                        <SearchableSelect className="mt-1" value={data.payment_method} onChange={(e) => setData('payment_method', e.target.value)} options={[{ value: 'cash', label: 'Cash' }, { value: 'card', label: 'Card' }, { value: 'credit', label: 'Credit (To be paid later)' }]} isClearable={false} />
+                        <SearchableSelect className="mt-1" value={data.payment_method} onChange={(e) => setData('payment_method', e.target.value)} options={[{ value: 'cash', label: 'Cash' }, { value: 'card', label: 'Card' }, { value: 'bank_transfer', label: 'Bank Transfer' }, { value: 'credit', label: 'Credit (To be paid later)' }]} isClearable={false} />
                         <InputError message={errors.payment_method} className="mt-2" />
                     </div>
                     <div>

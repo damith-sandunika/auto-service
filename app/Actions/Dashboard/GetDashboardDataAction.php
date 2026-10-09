@@ -61,7 +61,7 @@ class GetDashboardDataAction
         });
 
         // Recent Jobs
-        $recentJobs = Job::with(['vehicle.owner', 'mechanic'])
+        $recentJobs = Job::with(['vehicle', 'owner', 'mechanic'])
             ->where('garage_id', $garage_id)
             ->orderBy('created_at', 'desc')
             ->take(5)
@@ -71,7 +71,7 @@ class GetDashboardDataAction
                     'id' => $job->id,
                     'vehicle' => $job->vehicle ? $job->vehicle->make . ' ' . $job->vehicle->model : 'Unknown',
                     'vehicle_number' => $job->vehicle ? $job->vehicle->vehicle_number : 'WALK-IN',
-                    'customer' => ($job->vehicle && $job->vehicle->owner) ? $job->vehicle->owner->name : 'Walk-in Customer',
+                    'customer' => $job->owner ? $job->owner->name : 'Walk-in Customer',
                     'mechanic' => $job->mechanic ? $job->mechanic->name : 'Unassigned',
                     'status' => $job->status,
                     'cost' => $job->total_cost,

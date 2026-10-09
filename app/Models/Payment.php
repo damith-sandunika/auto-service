@@ -8,7 +8,7 @@ use App\Traits\BelongsToGarage;
 class Payment extends Model
 {
     use BelongsToGarage;
-    protected $fillable = ['invoice_id', 'amount', 'payment_method', 'payment_date'];
+    protected $fillable = ['garage_id', 'invoice_id', 'amount', 'payment_method', 'payment_date'];
 
     public function invoice()
     {

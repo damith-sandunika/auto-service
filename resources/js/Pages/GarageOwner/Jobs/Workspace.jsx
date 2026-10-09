@@ -76,15 +76,6 @@ export default function Workspace({ auth, job, inventory, services, suppliers })
             header={
                 <div className="flex items-center justify-between w-full">
                     <div className="flex items-center space-x-4">
-                        <Link 
-                            href={route('owner.pos.index')} 
-                            className="flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-200/60 text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm group"
-                            title="Back to Jobs"
-                        >
-                            <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                            </svg>
-                        </Link>
                         <h2 className="text-xl font-black text-slate-800 tracking-tight">
                             Job Workspace: {job.vehicle?.make && <span className="text-blue-600">{job.vehicle.make} {job.vehicle.model}</span>} <span className="text-slate-400 font-bold">({job.vehicle?.vehicle_number || 'Unknown'})</span>
                         </h2>

@@ -1,6 +1,6 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, Link } from '@inertiajs/react';
 import ThermalPreview from '@/Components/Invoice/ThermalPreview';
 import SearchableSelect from '@/Components/SearchableSelect';
 
@@ -32,7 +32,14 @@ export default function ThermalSettings({ settings }) {
 
     return (
         <AuthenticatedLayout 
-            header={<h2 className="text-xl font-black">Thermal Bill Settings</h2>}
+            header={
+                <div className="flex justify-between items-center w-full">
+                    <div>
+                        <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Thermal Bill Settings</h1>
+                        <p className="text-xs md:text-sm font-bold text-blue-600 mt-1">Configure your receipt printer output and logo</p>
+                    </div>
+                </div>
+            }
             headerActions={
                 <button type="submit" form="thermal-settings-form" disabled={processing} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md shadow-blue-500/20 transition-all active:scale-[0.98]">
                     {recentlySuccessful ? '✓ Saved Successfully' : 'Save Settings'}

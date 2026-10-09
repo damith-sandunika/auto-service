@@ -10,9 +10,11 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Traits\JobAccessTrait;
 
 class GlobalVehicleController extends Controller
 {
+    use JobAccessTrait;
     public function search(Request $request)
     {
         $query = $request->get('q');
@@ -66,7 +68,7 @@ class GlobalVehicleController extends Controller
         });
 
         $ownersHistory = $vehicle->owners()->with('customer')->orderBy('created_at', 'desc')->get();
-        $myCustomers = User::where('garage_id', Auth::user()->garage_id)->where('role', 'vehicle_owner')->get();
+        $myCustomers = User::where('garage_id', $this->getGarageId($request))->where('role', 'vehicle_owner')->get();
 
         return Inertia::render('GarageOwner/Vehicles/GlobalProfile', [
             'vehicle' => $vehicle,
@@ -147,7 +149,7 @@ class GlobalVehicleController extends Controller
             VehicleOwner::create([
                 'vehicle_id' => $vehicle->id,
                 'customer_id' => $request->customer_id,
-                'garage_id' => Auth::user()->garage_id,
+                'garage_id' => $this->getGarageId($request),
                 'is_current' => true,
                 'start_date' => now()
             ]);

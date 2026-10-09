@@ -22,6 +22,15 @@ Route::middleware([
         ]);
     });
 
+    // Serve Tenant Storage Files
+    Route::get('/tenant-media/{path}', function ($path) {
+        $fullPath = storage_path("app/public/{$path}");
+        if (!file_exists($fullPath)) {
+            abort(404);
+        }
+        return response()->file($fullPath);
+    })->where('path', '.*');
+
     // Tenant Auth Routes (Prefix: tenant.)
     Route::name('tenant.')->group(function () {
         Route::get('login', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'create'])->name('login');
@@ -51,11 +60,35 @@ Route::middleware([
             Route::post('/owner-dashboard/staff/{userId}/mark-out', [\App\Http\Controllers\GarageOwner\DashboardController::class, 'markStaffOut'])->name('dashboard.staff.mark-out');
             
             // Re-using the same controllers for now, they work perfectly fine in the tenant DB context
+            Route::resource('branches', \App\Http\Controllers\GarageOwner\BranchController::class);
             Route::resource('staff', \App\Http\Controllers\GarageOwner\StaffController::class);
+            Route::resource('inventory-locations', \App\Http\Controllers\GarageOwner\InventoryLocationController::class);
             Route::resource('inventory', \App\Http\Controllers\GarageOwner\InventoryController::class);
+            Route::get('jobs/{job}/print', [\App\Http\Controllers\GarageOwner\JobWorkspaceController::class, 'print'])->name('jobs.print');
+            Route::resource('jobs', \App\Http\Controllers\GarageOwner\JobWorkspaceController::class);
+            
+            // Workspace APIs
+            Route::post('jobs/{job}/complete', [\App\Http\Controllers\GarageOwner\JobWorkspacePaymentController::class, 'complete'])->name('jobs.complete');
+            Route::post('jobs/{job}/payment', [\App\Http\Controllers\GarageOwner\JobWorkspacePaymentController::class, 'addPayment'])->name('jobs.payment.store');
+            Route::patch('jobs/{job}/discount', [\App\Http\Controllers\GarageOwner\JobWorkspacePaymentController::class, 'updateDiscount'])->name('jobs.discount.update');
+            Route::post('jobs/{job}/items', [\App\Http\Controllers\GarageOwner\JobWorkspaceItemController::class, 'addItem'])->name('jobs.items.store');
+            Route::delete('jobs/items/{item}', [\App\Http\Controllers\GarageOwner\JobWorkspaceItemController::class, 'removeItem'])->name('jobs.items.destroy');
+            Route::patch('jobs/items/{item}/quantity', [\App\Http\Controllers\GarageOwner\JobWorkspaceItemController::class, 'updateQuantity'])->name('jobs.items.quantity');
+            Route::post('jobs/{job}/notes', [\App\Http\Controllers\GarageOwner\JobWorkspaceNoteController::class, 'storeNote'])->name('jobs.notes.store');
+            Route::patch('jobs/notes/{note}', [\App\Http\Controllers\GarageOwner\JobWorkspaceNoteController::class, 'updateNote'])->name('jobs.notes.update');
+            Route::delete('jobs/notes/{note}', [\App\Http\Controllers\GarageOwner\JobWorkspaceNoteController::class, 'destroyNote'])->name('jobs.notes.destroy');
+            Route::post('jobs/{job}/media', [\App\Http\Controllers\GarageOwner\JobWorkspaceMediaController::class, 'uploadMedia'])->name('jobs.media.store');
+            Route::delete('jobs/media/{media}', [\App\Http\Controllers\GarageOwner\JobWorkspaceMediaController::class, 'deleteMedia'])->name('jobs.media.destroy');
+            Route::get('orders/{order}/print', [\App\Http\Controllers\GarageOwner\OrderController::class, 'print'])->name('orders.print');
             Route::resource('orders', \App\Http\Controllers\GarageOwner\OrderController::class);
+            Route::post('orders/{order}/payments', [\App\Http\Controllers\GarageOwner\OrderController::class, 'addPayment'])->name('orders.payments.store');
+            Route::patch('orders/{order}/payments/{payment}', [\App\Http\Controllers\GarageOwner\OrderController::class, 'updatePayment'])->name('orders.payments.update');
+            Route::patch('orders/{order}/items/{item}', [\App\Http\Controllers\GarageOwner\OrderController::class, 'updateItem'])->name('orders.items.update');
+            Route::delete('orders/{order}/items/{item}', [\App\Http\Controllers\GarageOwner\OrderController::class, 'deleteItem'])->name('orders.items.destroy');
             Route::resource('expenses', \App\Http\Controllers\GarageOwner\ExpenseController::class);
+            Route::get('reports/export', [\App\Http\Controllers\GarageOwner\ReportController::class, 'exportCsv'])->name('reports.export');
             Route::resource('reports', \App\Http\Controllers\GarageOwner\ReportController::class);
+            Route::get('hr-dashboard', [\App\Http\Controllers\GarageOwner\HRDashboardController::class, 'index'])->name('hr.dashboard');
             Route::resource('hr', \App\Http\Controllers\GarageOwner\HRController::class);
             Route::get('payroll', [\App\Http\Controllers\GarageOwner\PayrollController::class, 'index'])->name('payroll.index');
             Route::post('payroll', [\App\Http\Controllers\GarageOwner\PayrollController::class, 'store'])->name('payroll.store');
@@ -74,15 +107,27 @@ Route::middleware([
             
             // POS
             Route::get('pos', [\App\Http\Controllers\GarageOwner\PosController::class, 'index'])->name('pos.index');
-            Route::post('pos/checkout', [\App\Http\Controllers\GarageOwner\PosController::class, 'checkout'])->name('pos.checkout');
+            Route::post('pos/store-job', [\App\Http\Controllers\GarageOwner\PosController::class, 'storeJob'])->name('pos.storeJob');
+            Route::patch('pos/jobs/{id}/state', [\App\Http\Controllers\GarageOwner\PosController::class, 'updateState'])->name('pos.updateState');
+            Route::post('pos/jobs/{id}/done', [\App\Http\Controllers\GarageOwner\PosController::class, 'markDone'])->name('pos.markDone');
             
             // Settings
             Route::get('settings', [\App\Http\Controllers\GarageOwner\SettingController::class, 'index'])->name('settings.index');
             Route::post('settings', [\App\Http\Controllers\GarageOwner\SettingController::class, 'update'])->name('settings.update');
-            Route::get('settings/invoice', [\App\Http\Controllers\GarageOwner\InvoiceSettingController::class, 'index'])->name('settings.invoice');
+            Route::delete('settings/wipe', [\App\Http\Controllers\GarageOwner\SettingController::class, 'wipeBranch'])->name('settings.wipe');
+            Route::get('settings/danger-zone', [\App\Http\Controllers\GarageOwner\SettingController::class, 'dangerZone'])->name('settings.danger-zone');
+            Route::get('settings/invoice', [\App\Http\Controllers\GarageOwner\InvoiceSettingController::class, 'edit'])->name('settings.invoice');
             Route::post('settings/invoice', [\App\Http\Controllers\GarageOwner\InvoiceSettingController::class, 'update'])->name('settings.invoice.update');
-            Route::get('settings/thermal', [\App\Http\Controllers\GarageOwner\ThermalSettingController::class, 'index'])->name('settings.thermal');
+            Route::get('settings/thermal', [\App\Http\Controllers\GarageOwner\ThermalSettingController::class, 'edit'])->name('settings.thermal');
             Route::post('settings/thermal', [\App\Http\Controllers\GarageOwner\ThermalSettingController::class, 'update'])->name('settings.thermal.update');
+            
+            // Roles & Permissions
+            Route::get('roles', [\App\Http\Controllers\GarageOwner\RoleController::class, 'index'])->name('roles.index');
+            Route::get('roles/create', [\App\Http\Controllers\GarageOwner\RoleController::class, 'create'])->name('roles.create');
+            Route::post('roles', [\App\Http\Controllers\GarageOwner\RoleController::class, 'store'])->name('roles.store');
+            Route::get('roles/{role}/edit', [\App\Http\Controllers\GarageOwner\RoleController::class, 'edit'])->name('roles.edit');
+            Route::put('roles/{role}', [\App\Http\Controllers\GarageOwner\RoleController::class, 'update'])->name('roles.update');
+            Route::delete('roles/{role}', [\App\Http\Controllers\GarageOwner\RoleController::class, 'destroy'])->name('roles.destroy');
             
             // Vehicles (Central DB accessed via Tenant Context)
             Route::get('vehicles', [\App\Http\Controllers\GarageOwner\VehicleDirectoryController::class, 'index'])->name('vehicles.index');
@@ -90,8 +135,8 @@ Route::middleware([
         });
         
         // Garage Staff Routes
-        Route::middleware('role:garage_staff')->name('staff.')->group(function () {
-            Route::get('/staff-dashboard', function() { return inertia('Staff/Dashboard'); })->name('dashboard');
+        Route::prefix('staff')->middleware('role:garage_staff')->name('staff.')->group(function () {
+            Route::get('/dashboard', function() { return inertia('Staff/Dashboard'); })->name('dashboard');
             Route::resource('jobs', \App\Http\Controllers\GarageOwner\JobWorkspaceController::class); // Fallback mapping
         });
 

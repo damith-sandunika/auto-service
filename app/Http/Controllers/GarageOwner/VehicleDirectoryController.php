@@ -8,12 +8,14 @@ use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\JobAccessTrait;
 
 class VehicleDirectoryController extends Controller
 {
-    public function index()
+    use JobAccessTrait;
+    public function index(Request $request)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
 
         $customers = User::where('garage_id', $garageId)
             ->where('role', 'vehicle_owner')
@@ -45,7 +47,7 @@ class VehicleDirectoryController extends Controller
         ]);
 
         User::create([
-            'garage_id' => Auth::user()->garage_id,
+            'garage_id' => $this->getGarageId($request),
             'name' => $request->name,
             'email' => $request->email ?? (strtolower(str_replace(' ', '', $request->name)) . rand(1000,9999) . '@garage.local'),
             'password' => bcrypt('password'),
@@ -82,7 +84,7 @@ class VehicleDirectoryController extends Controller
                 \App\Models\VehicleOwner::create([
                     'vehicle_id' => $vehicle->id,
                     'customer_id' => $request->owner_id,
-                    'garage_id' => Auth::user()->garage_id,
+                    'garage_id' => $this->getGarageId($request),
                     'is_current' => true,
                     'start_date' => now()
                 ]);
@@ -96,7 +98,7 @@ class VehicleDirectoryController extends Controller
                     \App\Models\VehicleOwner::create([
                         'vehicle_id' => $vehicle->id,
                         'customer_id' => $request->owner_id,
-                        'garage_id' => Auth::user()->garage_id,
+                        'garage_id' => $this->getGarageId($request),
                         'is_current' => true,
                         'start_date' => now()
                     ]);
@@ -111,10 +113,10 @@ class VehicleDirectoryController extends Controller
         }
     }
 
-    public function destroyVehicle(Vehicle $vehicle)
+    public function destroyVehicle(Request $request, Vehicle $vehicle)
     {
         // Simple check to ensure vehicle belongs to a customer in this garage
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
         $currentOwner = \App\Models\VehicleOwner::where('vehicle_id', $vehicle->id)->where('is_current', true)->first();
         $customer = $currentOwner ? User::find($currentOwner->customer_id) : null;
         

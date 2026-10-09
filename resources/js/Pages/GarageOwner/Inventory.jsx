@@ -7,12 +7,14 @@ import DataTable from '@/Components/DataTable';
 import Badge from '@/Components/Badge';
 import { useForm } from '@inertiajs/react';
 import InventoryItemModal from './Inventory/InventoryItemModal';
+import LocationsModal from './Inventory/LocationsModal';
 
 const formatPrice = (price) => new Intl.NumberFormat('en-LK', { style: 'currency', currency: 'LKR' }).format(price);
 
-export default function Inventory({ inventory, lowStockCount }) {
+export default function Inventory({ inventory, lowStockCount, locations, activeOrders }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isLocationsModalOpen, setIsLocationsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [deletingItem, setDeletingItem] = useState(null);
     const { delete: destroy, processing } = useForm();
@@ -27,9 +29,12 @@ export default function Inventory({ inventory, lowStockCount }) {
             fullWidth={true}
             header={<div className="text-left w-full"><h2 className="text-xl font-black text-black">Inventory Management</h2><p className="text-xs font-bold text-blue-600 mt-1">Manage your stock levels and pricing</p></div>}
             headerActions={
-                <div className="w-full sm:w-auto flex justify-end">
+                <div className="w-full sm:w-auto flex justify-end gap-3 items-center">
+                    <button onClick={() => setIsLocationsModalOpen(true)} className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-5 py-2 rounded-lg font-black transition-all text-xs border border-indigo-200 shadow-sm whitespace-nowrap">
+                        Manage Locations
+                    </button>
                     <button onClick={openCreate} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-black transition-all text-xs shadow-sm shadow-blue-500/20 whitespace-nowrap">
-                        <span className="text-base leading-none mb-0.5 mr-1">+</span> Add New Item
+                        <span className="text-base leading-none mb-0.5 mr-1">+</span> Receive External Stock
                     </button>
                 </div>
             }
@@ -42,11 +47,12 @@ export default function Inventory({ inventory, lowStockCount }) {
                         <div><h4 className="text-rose-700 font-black">Low Stock Warning</h4><p className="text-rose-600/80 text-sm mt-1 font-medium">{lowStockCount} items are running low or out of stock.</p></div>
                     </div>
                 )}
-                <DataTable columns={[{ label: 'SKU' }, { label: 'Item Name' }, { label: 'Quantity', align: 'center' }, { label: 'Unit Price', align: 'right' }, { label: 'Status' }, { label: 'Actions', align: 'right' }]} isEmpty={!inventory?.data?.length} emptyMessage="Inventory is empty.">
+                <DataTable columns={[{ label: 'SKU' }, { label: 'Item Name' }, { label: 'Location' }, { label: 'Quantity', align: 'center' }, { label: 'Unit Price', align: 'right' }, { label: 'Status' }, { label: 'Actions', align: 'right' }]} isEmpty={!inventory?.data?.length} emptyMessage="Inventory is empty.">
                     {inventory?.data?.map((item) => (
                         <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                             <td className="px-6 py-4 font-mono text-xs font-bold text-slate-400">{item.sku || '-'}</td>
                             <td className="px-6 py-4 font-bold text-slate-800">{item.item_name}</td>
+                            <td className="px-6 py-4 font-bold text-indigo-600 text-xs">{item.location ? item.location.name : <span className="text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded">Unassigned</span>}</td>
                             <td className="px-6 py-4 text-center"><span className={`text-lg font-black ${item.quantity === 0 ? 'text-rose-500' : 'text-slate-700'}`}>{item.quantity}</span></td>
                             <td className="px-6 py-4 text-right font-black text-slate-700">{formatPrice(item.price)}</td>
                             <td className="px-6 py-4"><Badge variant={item.quantity > 5 ? 'success' : item.quantity > 0 ? 'warning' : 'danger'}>{item.quantity > 5 ? 'In Stock' : item.quantity > 0 ? 'Low Stock' : 'Out of Stock'}</Badge></td>
@@ -60,7 +66,9 @@ export default function Inventory({ inventory, lowStockCount }) {
                 {inventory?.links && <Pagination links={inventory.links} />}
             </div>
 
-            <InventoryItemModal show={isModalOpen} onClose={() => setIsModalOpen(false)} editingItem={editingItem} />
+            <LocationsModal show={isLocationsModalOpen} onClose={() => setIsLocationsModalOpen(false)} locations={locations} />
+
+            <InventoryItemModal show={isModalOpen} onClose={() => setIsModalOpen(false)} editingItem={editingItem} locations={locations} activeOrders={activeOrders} />
 
             <Modal show={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} maxWidth="sm">
                 <div className="p-6">

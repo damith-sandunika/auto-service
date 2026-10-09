@@ -8,15 +8,17 @@ use Inertia\Inertia;
 use App\Models\ServiceReminder;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use App\Traits\JobAccessTrait;
 
 class ServiceReminderController extends Controller
 {
-    public function index()
+    use JobAccessTrait;
+    public function index(Request $request)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
 
         $reminders = ServiceReminder::where('garage_id', $garageId)
-            ->with(['vehicle.owner']) // assuming vehicle belongsTo owner
+            ->with(['vehicle', 'owner']) // assuming vehicle belongsTo owner
             ->orderBy('due_date', 'asc')
             ->get();
 
@@ -27,10 +29,10 @@ class ServiceReminderController extends Controller
 
     public function store(Request $request)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
         
         $validated = $request->validate([
-            'vehicle_id' => 'required|exists:vehicles,id',
+            'vehicle_id' => 'required|exists:mysql.vehicles,id',
             'service_type' => 'required|string',
             'due_date' => 'required|date',
             'notes' => 'nullable|string'
@@ -46,9 +48,10 @@ class ServiceReminderController extends Controller
 
     public function update(Request $request, $id)
     {
-        $garageId = Auth::user()->garage_id;
+        $garageId = $this->getGarageId($request);
         
-        $reminder = ServiceReminder::where('garage_id', $garageId)->findOrFail($id);
+        $reminder = ServiceReminder::findOrFail($id);
+        $this->checkGarageAccess($reminder->garage_id);
 
         $validated = $request->validate([
             'status' => 'required|in:pending,notified,completed,cancelled',

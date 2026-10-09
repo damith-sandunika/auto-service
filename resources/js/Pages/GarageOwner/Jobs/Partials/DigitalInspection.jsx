@@ -88,9 +88,9 @@ export default function DigitalInspection({ job }) {
                         {job.media && job.media.length > 0 ? job.media.map(media => (
                             <div key={media.id} className="relative group bg-slate-100 rounded-xl overflow-hidden aspect-video border border-slate-200 shadow-sm flex items-center justify-center">
                                 {media.file_type === 'video' ? (
-                                    <video src={'/storage/' + media.file_path} className="w-full h-full object-cover" controls preload="metadata" />
+                                    <video src={'/tenant-media/' + media.file_path} className="w-full h-full object-cover" controls preload="metadata" />
                                 ) : (
-                                    <img src={'/storage/' + media.file_path} className="w-full h-full object-cover" alt="Inspection" />
+                                    <img src={'/tenant-media/' + media.file_path} className="w-full h-full object-cover" alt="Inspection" />
                                 )}
                                 <button 
                                     onClick={() => deleteMedia(media.id)}
@@ -118,3 +118,4 @@ export default function DigitalInspection({ job }) {
         </div>
     );
 }
+

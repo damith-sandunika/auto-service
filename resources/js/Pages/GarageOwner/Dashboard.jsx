@@ -49,7 +49,16 @@ export default function Dashboard({ stats, charts, recentJobs, shift, mechanics,
 
             <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6">
                 {!garage ? (
-                    <OnboardingCard />
+                    <div className="bg-white rounded-3xl p-12 text-center shadow-sm border border-slate-200">
+                        <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <BriefcaseIcon className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-xl font-black text-slate-800 mb-2">No Branches Found</h3>
+                        <p className="text-slate-500 text-sm font-medium mb-6 max-w-md mx-auto">You have successfully registered your company! To get started, please navigate to the Branches menu on the sidebar to create and manage your branches.</p>
+                        <Link href={route('owner.branches.index')} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-colors">
+                            Manage Branches
+                        </Link>
+                    </div>
                 ) : !shift.active ? (
                     <ShiftOpenCard mechanics={mechanics} />
                 ) : (

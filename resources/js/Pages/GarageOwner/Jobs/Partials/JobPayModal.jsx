@@ -55,7 +55,7 @@ export default function JobPayModal({ job }) {
 
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-2">Payment Method</label>
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-4 gap-3">
                             <label className={`cursor-pointer border rounded-xl p-3 flex flex-col items-center justify-center gap-2 transition-all ${payData.payment_method === 'cash' ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-500' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
                                 <input type="radio" name="payment_method" value="cash" className="sr-only" onChange={(e) => setPayData('payment_method', e.target.value)} checked={payData.payment_method === 'cash'} />
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
@@ -70,6 +70,11 @@ export default function JobPayModal({ job }) {
                                 <input type="radio" name="payment_method" value="bank_transfer" className="sr-only" onChange={(e) => setPayData('payment_method', e.target.value)} checked={payData.payment_method === 'bank_transfer'} />
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>
                                 <span className="text-xs font-bold uppercase tracking-wider text-center">Transfer</span>
+                            </label>
+                            <label className={`cursor-pointer border rounded-xl p-3 flex flex-col items-center justify-center gap-2 transition-all ${payData.payment_method === 'credit' ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-500' : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'}`}>
+                                <input type="radio" name="payment_method" value="credit" className="sr-only" onChange={(e) => setPayData('payment_method', e.target.value)} checked={payData.payment_method === 'credit'} />
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span className="text-xs font-bold uppercase tracking-wider text-center">Credit</span>
                             </label>
                         </div>
                     </div>

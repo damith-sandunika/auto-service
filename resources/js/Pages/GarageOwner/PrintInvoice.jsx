@@ -14,7 +14,7 @@ export default function PrintInvoice({ invoice, settings }) {
 
     if (isA4) {
         const realData = {
-            invoice_no: invoice.invoice_number || `INV-${invoice.id.toString().padStart(5, '0')}`,
+            invoice_no: invoice.invoice_number || invoice.id,
             date: new Date(invoice.created_at).toLocaleDateString(), customer_name: invoice.job?.vehicle?.owner?.name || 'Walk-in Customer',
             vehicle_no: invoice.job?.vehicle?.vehicle_number || '-', items: items.map(i => ({ desc: i.description, qty: i.quantity, price: parseFloat(i.price) })),
             subtotal: parseFloat(invoice.total_amount) + parseFloat(invoice.discount || 0), discount: parseFloat(invoice.discount || 0), tax: parseFloat(invoice.tax || 0), total: parseFloat(invoice.total_amount)
@@ -22,7 +22,7 @@ export default function PrintInvoice({ invoice, settings }) {
         return (
             <>
                 <Head title={`Print Invoice #${invoice.id}`} />
-                <div className="print:m-0 print:p-0 flex justify-center py-10 print:py-0"><InvoicePreview settings={settings} originalLogo={settings.logo_url || (garage?.logo_path ? '/storage/'+garage.logo_path : null)} realData={realData} isPreview={false} /></div>
+                <div className="print:m-0 print:p-0 flex justify-center py-10 print:py-0"><InvoicePreview settings={settings} originalLogo={settings.logo_url || (garage?.logo_path ? '/tenant-media/'+garage.logo_path : null)} realData={realData} isPreview={false} /></div>
                 <div className="no-print" style={{ marginTop: '24px', textAlign: 'center', paddingBottom: '40px' }}>
                     <button onClick={() => window.print()} style={{ padding: '10px 24px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>🖨 Print Invoice</button>
                     <button onClick={() => window.close()} style={{ padding: '10px 24px', background: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', marginLeft: '12px' }}>Close Tab</button>
@@ -37,13 +37,13 @@ export default function PrintInvoice({ invoice, settings }) {
             <Head title={`Print Invoice #${invoice.id}`} />
             <div className="mx-auto bg-white text-black print:m-0 print:p-0 relative shadow-[0_10px_30px_rgba(0,0,0,0.1)] print:shadow-none" style={{ width: settings?.paper_width || '80mm', padding: '4mm 3mm', fontFamily: settings?.font_family === 'sans-serif' ? "'Inter', system-ui, -apple-system, sans-serif" : "'Courier New', Courier, monospace", fontSize: '12px', lineHeight: settings?.line_height || '1.4', minHeight: '400px' }} id="thermal-bill">
                 <div className="absolute top-0 left-0 right-0 h-2 no-print" style={{ backgroundImage: 'linear-gradient(135deg, transparent 50%, #fff 50%), linear-gradient(45deg, #fff 50%, transparent 50%)', backgroundSize: '8px 8px', backgroundPosition: '0 -4px', transform: 'rotate(180deg)', marginTop: '-8px' }}></div>
-                <div className="text-center" style={{ marginBottom: '12px' }}>{settings?.logo_url ? <img src={settings.logo_url} alt="Logo" style={{ maxWidth: `${settings?.logo_size || 140}px`, height: 'auto', display: 'inline-block' }} /> : garage?.logo_path ? <img src={`/storage/${garage.logo_path}`} alt="Logo" style={{ maxWidth: `${settings?.logo_size || 140}px`, height: 'auto', display: 'inline-block' }} /> : null}</div>
+                <div className="text-center" style={{ marginBottom: '12px' }}>{settings?.logo_url ? <img src={settings.logo_url} alt="Logo" style={{ maxWidth: `${settings?.logo_size || 140}px`, height: 'auto', display: 'inline-block' }} /> : garage?.logo_path ? <img src={`/tenant-media/${garage.logo_path}`} alt="Logo" style={{ maxWidth: `${settings?.logo_size || 140}px`, height: 'auto', display: 'inline-block' }} /> : null}</div>
                 <div className="text-center" style={{ fontSize: '18px', letterSpacing: '-0.03em', fontWeight: 800, marginBottom: '2px' }}>{garage?.name || 'AUTO SERVICE'}</div>
                 {garage?.tagline && <div className="text-center" style={{ fontSize: '10px', marginBottom: '2px' }}>{garage.tagline}</div>}
                 {garage?.phone && <div className="text-center" style={{ fontSize: '10px' }}>📞 {garage.phone}</div>}
                 {garage?.address && <div className="text-center whitespace-pre-wrap" style={{ fontSize: '10px' }}>{garage.address}</div>}
                 <div style={{ borderTop: '1.5px dashed #000', margin: '8px 0' }}></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontSize: '12px' }}><span style={{ flex: 1, textAlign: 'left' }}>INV No:</span><span style={{ fontWeight: 800, textAlign: 'right' }}>{invoice.invoice_number || invoice.id.toString().padStart(5, '0')}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontSize: '12px' }}><span style={{ flex: 1, textAlign: 'left' }}>Order No:</span><span style={{ fontWeight: 800, textAlign: 'right' }}>{invoice.invoice_number || invoice.id}</span></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontSize: '12px' }}><span style={{ flex: 1, textAlign: 'left' }}>Date:</span><span style={{ fontWeight: 800, textAlign: 'right' }}>{new Date(invoice.created_at).toLocaleDateString()} {new Date(invoice.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', gap: '4px', fontSize: '12px' }}><span style={{ flex: 1, textAlign: 'left' }}>Vehicle:</span><span style={{ fontWeight: 800, textAlign: 'right' }}>{invoice.job?.vehicle?.vehicle_number || '-'}</span></div>
                 <div style={{ borderTop: '1.5px dashed #000', margin: '8px 0' }}></div>
@@ -85,3 +85,4 @@ export default function PrintInvoice({ invoice, settings }) {
         </>
     );
 }
+
