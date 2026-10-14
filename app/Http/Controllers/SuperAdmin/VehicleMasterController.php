@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Vehicle;
 use App\Models\VehicleMake;
 use App\Models\VehicleModel;
 use Illuminate\Http\Request;
@@ -14,24 +13,20 @@ class VehicleMasterController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $query = Vehicle::query();
+        $query = VehicleMake::with('models');
 
         if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('vehicle_number', 'like', "%{$search}%")
-                  ->orWhere('make', 'like', "%{$search}%")
-                  ->orWhere('model', 'like', "%{$search}%");
-            });
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhereHas('models', function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
         }
 
-        $vehicles = $query->latest()->paginate(15)->withQueryString();
-        $makes = VehicleMake::with('models')->orderBy('name')->get();
+        $makes = $query->orderBy('name')->get();
 
         return Inertia::render('SuperAdmin/VehicleMaster/Index', [
             'makes' => $makes,
-            'vehicles' => $vehicles,
-            'filters' => $request->only('search', 'tab'),
-            'totalVehicles' => Vehicle::count(),
+            'filters' => $request->only('search'),
         ]);
     }
 
@@ -55,24 +50,5 @@ class VehicleMasterController extends Controller
 
         VehicleModel::create($request->all());
         return redirect()->back()->with('success', 'Vehicle Model added successfully');
-    }
-
-    public function storeVehicle(Request $request)
-    {
-        $request->validate([
-            'vehicle_number' => 'required|string|max:50|unique:vehicles,vehicle_number',
-            'make' => 'nullable|string|max:100',
-            'model' => 'nullable|string|max:100',
-            'year' => 'nullable|integer|min:1900|max:' . (date('Y') + 1),
-        ]);
-
-        Vehicle::create([
-            'vehicle_number' => strtoupper(trim($request->vehicle_number)),
-            'make' => $request->make,
-            'model' => $request->model,
-            'year' => $request->year,
-        ]);
-
-        return redirect()->back()->with('success', 'Vehicle registered into central database successfully.');
     }
 }
