@@ -24,6 +24,10 @@ Route::middleware([
 
     // Serve Tenant Storage Files safely
     Route::get('/tenant-media/{path}', function ($path) {
+        if ($path === 'undefined' || $path === 'null' || empty($path)) {
+            abort(404);
+        }
+
         $baseDir = realpath(storage_path('app/public'));
         if (!$baseDir) {
             abort(404);
