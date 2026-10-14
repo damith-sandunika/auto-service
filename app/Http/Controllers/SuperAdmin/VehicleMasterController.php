@@ -13,21 +13,29 @@ class VehicleMasterController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $query = VehicleMake::with('models');
+        $query = VehicleMake::withCount('models');
 
         if ($search) {
-            $query->where('name', 'like', "%{$search}%")
-                  ->orWhereHas('models', function ($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  });
+            $query->where('name', 'like', "%{$search}%");
         }
 
-        $makes = $query->orderBy('name')->get();
+        $makes = $query->orderBy('name')->paginate(15)->withQueryString();
+        $allMakes = VehicleMake::select('id', 'name')->orderBy('name')->get();
+        $totalMakes = VehicleMake::count();
+        $totalModels = VehicleModel::count();
 
         return Inertia::render('SuperAdmin/VehicleMaster/Index', [
             'makes' => $makes,
+            'allMakes' => $allMakes,
+            'totalMakes' => $totalMakes,
+            'totalModels' => $totalModels,
             'filters' => $request->only('search'),
         ]);
+    }
+
+    public function getModels(VehicleMake $make)
+    {
+        return response()->json($make->models()->orderBy('name')->get());
     }
 
     public function storeMake(Request $request)

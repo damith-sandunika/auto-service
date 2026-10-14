@@ -56,6 +56,7 @@ foreach (config('tenancy.central_domains') as $domain) {
                 Route::delete('vehicle-master/makes/{make}', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'destroyMake'])->name('vehicle-master.makes.destroy');
                 
                 Route::post('vehicle-master/models', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'storeModel'])->name('vehicle-master.models.store');
+                Route::get('vehicle-master/makes/{make}/models', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'getModels'])->name('vehicle-master.makes.models');
                 Route::put('vehicle-master/models/{model}', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'updateModel'])->name('vehicle-master.models.update');
                 Route::delete('vehicle-master/models/{model}', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'destroyModel'])->name('vehicle-master.models.destroy');
             });
