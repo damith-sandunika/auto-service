@@ -110,6 +110,7 @@ export default function VehiclesIndex({ vehicles = { data: [] }, makes = [], fil
                                     <th className="px-6 py-4">Model</th>
                                     <th className="px-6 py-4">Year</th>
                                     <th className="px-6 py-4">Registered Date</th>
+                                    <th className="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -132,10 +133,23 @@ export default function VehiclesIndex({ vehicles = { data: [] }, makes = [], fil
                                         <td className="px-6 py-4 text-xs font-medium text-slate-400">
                                             {new Date(vehicle.created_at).toLocaleDateString()}
                                         </td>
+                                        <td className="px-6 py-4 text-right whitespace-nowrap">
+                                            <Link
+                                                href={route('saas.vehicles.show', vehicle.id)}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors shadow-2xs"
+                                                title="View Vehicle Profile & Cross-Tenant Service History"
+                                            >
+                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                <span>View Profile</span>
+                                            </Link>
+                                        </td>
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan="5" className="px-6 py-12 text-center text-slate-500 font-medium">
+                                        <td colSpan="6" className="px-6 py-12 text-center text-slate-500 font-medium">
                                             No vehicles found in the central database.
                                         </td>
                                     </tr>

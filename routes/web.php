@@ -48,6 +48,7 @@ foreach (config('tenancy.central_domains') as $domain) {
                 // Registered Vehicles Database (Central Database)
                 Route::get('vehicles', [\App\Http\Controllers\SuperAdmin\VehicleController::class, 'index'])->name('vehicles.index');
                 Route::post('vehicles', [\App\Http\Controllers\SuperAdmin\VehicleController::class, 'store'])->name('vehicles.store');
+                Route::get('vehicles/{vehicle}', [\App\Http\Controllers\SuperAdmin\VehicleController::class, 'show'])->name('vehicles.show');
 
                 // Vehicle Master Data (Makes & Models Catalog)
                 Route::get('vehicle-master', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'index'])->name('vehicle-master.index');
