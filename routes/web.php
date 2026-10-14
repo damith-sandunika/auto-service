@@ -45,10 +45,12 @@ foreach (config('tenancy.central_domains') as $domain) {
                 Route::get('/subscriptions', [\App\Http\Controllers\SuperAdmin\BillingController::class, 'index'])->name('subscriptions.index');
                 Route::post('/subscriptions', [\App\Http\Controllers\SuperAdmin\BillingController::class, 'store'])->name('subscriptions.store');
                 
-                // Vehicle Master (Global)
+                // Vehicle Master & Global Vehicles (Central Database)
                 Route::get('vehicle-master', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'index'])->name('vehicle-master.index');
+                Route::get('vehicles', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'index'])->name('vehicles.index');
                 Route::post('vehicle-master/makes', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'storeMake'])->name('vehicle-master.makes.store');
                 Route::post('vehicle-master/models', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'storeModel'])->name('vehicle-master.models.store');
+                Route::post('vehicle-master/vehicles', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'storeVehicle'])->name('vehicle-master.vehicles.store');
             });
         });
 
