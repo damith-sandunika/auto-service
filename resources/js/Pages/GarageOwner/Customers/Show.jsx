@@ -23,7 +23,7 @@ export default function Show({ customer }) {
                 {customer.vehicles && customer.vehicles.map(vehicle => (
                     <div key={vehicle.id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                         <h3 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-3">
-                            <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-md text-xl tracking-wider">{vehicle.license_plate}</span>
+                            <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-md text-xl tracking-wider">{vehicle.vehicle_number || vehicle.license_plate}</span>
                             <span className="text-slate-500 text-sm font-bold uppercase">{vehicle.make} {vehicle.model} ({vehicle.year})</span>
                         </h3>
                         

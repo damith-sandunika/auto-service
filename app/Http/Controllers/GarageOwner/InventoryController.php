@@ -20,7 +20,7 @@ class InventoryController extends Controller
         $inventory = Inventory::with('location')->where('garage_id', $garageId)->orderBy('id', 'desc')->paginate(15);
         $lowStockCount = Inventory::where('garage_id', $garageId)->where('quantity', '<=', 5)->count();
         $locations = \App\Models\InventoryLocation::where('garage_id', $garageId)->get();
-        $activeOrders = \App\Models\Job::with('vehicle:id,vehicle_number,license_plate')
+        $activeOrders = \App\Models\Job::with('vehicle:id,vehicle_number,make,model')
             ->select(['id', 'vehicle_id', 'status', 'garage_id'])
             ->where('garage_id', $garageId)
             ->whereNotIn('status', ['completed', 'done'])

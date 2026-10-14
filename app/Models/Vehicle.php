@@ -10,6 +10,13 @@ class Vehicle extends Model
 
     protected $fillable = ['vehicle_number', 'make', 'model', 'year'];
 
+    protected $appends = ['license_plate'];
+
+    public function getLicensePlateAttribute()
+    {
+        return $this->vehicle_number;
+    }
+
     public function owners()
     {
         return $this->hasMany(VehicleOwner::class);
