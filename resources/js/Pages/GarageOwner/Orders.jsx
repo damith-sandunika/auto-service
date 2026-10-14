@@ -5,7 +5,7 @@ import Modal from '@/Components/Modal';
 import OrdersTable from './Orders/OrdersTable';
 import OrderPaymentModal from './Orders/OrderPaymentModal';
 
-export default function Orders({ invoices, jobs, branches, selectedBranchId, deletedOrders, activeCount, deletedCount, currentTab }) {
+export default function Orders({ invoices, branches, selectedBranchId, filters = {} }) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [deletingInvoice, setDeletingInvoice] = useState(null);
@@ -38,7 +38,13 @@ export default function Orders({ invoices, jobs, branches, selectedBranchId, del
                             className="bg-white border border-slate-200 text-sm font-bold rounded-xl px-4 py-2 text-slate-700 h-[38px]"
                             value={selectedBranchId || ''}
                             onChange={(e) => {
-                                window.location.href = route('owner.orders.index') + (e.target.value ? '?branch_id=' + e.target.value : '');
+                                const currentParams = new URLSearchParams(window.location.search);
+                                if (e.target.value) {
+                                    currentParams.set('branch_id', e.target.value);
+                                } else {
+                                    currentParams.delete('branch_id');
+                                }
+                                router.get(route('owner.orders.index') + '?' + currentParams.toString());
                             }}
                         >
                             <option value="">All Branches</option>
@@ -52,10 +58,8 @@ export default function Orders({ invoices, jobs, branches, selectedBranchId, del
             <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6 space-y-6">
                 <OrdersTable 
                     invoices={invoices} 
-                    deletedOrders={deletedOrders} 
-                    activeCount={activeCount}
-                    deletedCount={deletedCount}
-                    currentTab={currentTab}
+                    filters={filters}
+                    selectedBranchId={selectedBranchId}
                     onPay={openPay} 
                     onDelete={openDelete} 
                 />

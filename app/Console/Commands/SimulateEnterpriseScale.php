@@ -331,7 +331,7 @@ class SimulateEnterpriseScale extends Command
                     $job->update(['total_cost' => $total]);
 
                     // Generate Invoice
-                    $invoiceNum = "INV-B" . $branch->id . "-" . str_pad($job->id, 5, '0', STR_PAD_LEFT);
+                    $invoiceNum = (string) \App\Services\SequenceGenerator::getNextNumber($branch->id, 'invoice');
                     $invoice = Invoice::create([
                         'garage_id' => $branch->id,
                         'job_id' => $job->id,

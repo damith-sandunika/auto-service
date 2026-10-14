@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import Pagination from '@/Components/Pagination';
 import NewCustomerModal from './Partials/NewCustomerModal';
 import NewVehicleModal from './Partials/NewVehicleModal';
@@ -56,12 +56,12 @@ export default function VehiclesIndex({ customers, vehicles }) {
                             <ul className="divide-y divide-slate-100">
                                 {searchResults.map(v => (
                                     <li key={v.id}>
-                                        <a href="#" className="block hover:bg-slate-50 p-4 transition-colors">
+                                        <Link href={route('owner.vehicles.show', v.id)} className="block hover:bg-slate-50 p-4 transition-colors">
                                             <div className="flex items-center justify-between">
                                                 <div><p className="text-lg font-black text-slate-800 uppercase">{v.vehicle_number}</p><p className="text-sm text-slate-500">{v.make} {v.model}</p></div>
                                                 <div className="text-blue-600 font-bold text-sm flex items-center gap-1">View Profile <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg></div>
                                             </div>
-                                        </a>
+                                        </Link>
                                     </li>
                                 ))}
                             </ul>
@@ -80,10 +80,10 @@ export default function VehiclesIndex({ customers, vehicles }) {
                                     <tr key={vehicle.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4 font-black text-slate-800 text-base">{vehicle.vehicle_number}</td>
                                         <td className="px-6 py-4"><div className="font-bold text-slate-700">{vehicle.make || '-'}</div><div className="text-[10px] font-bold text-slate-400 uppercase">{vehicle.model || '-'} {vehicle.year ? `(${vehicle.year})` : ''}</div></td>
-                                        <td className="px-6 py-4"><div className="font-bold text-slate-800">{vehicle.owner?.name}</div><div className="text-[10px] text-slate-500">{vehicle.owner?.email}</div></td>
+                                        <td className="px-6 py-4"><div className="font-bold text-slate-800">{vehicle.owner?.name || 'Unassigned'}</div><div className="text-[10px] text-slate-500">{vehicle.owner?.email || ''}</div></td>
                                         <td className="px-6 py-4 text-xs font-bold text-slate-600">{vehicle.owner?.phone || 'N/A'}</td>
                                         <td className="px-6 py-4 text-right space-x-3">
-                                            <a href="#" className="text-blue-600 hover:text-blue-800 font-bold text-[11px] uppercase tracking-wider">Profile</a>
+                                            <Link href={route('owner.vehicles.show', vehicle.id)} className="text-blue-600 hover:text-blue-800 font-bold text-[11px] uppercase tracking-wider">Profile</Link>
                                             <button onClick={() => deleteVehicle(vehicle.id)} className="text-red-500 hover:text-red-700 font-bold text-[11px] uppercase tracking-wider">Remove</button>
                                         </td>
                                     </tr>

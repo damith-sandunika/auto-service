@@ -39,8 +39,6 @@ export default function Create({ modules }) {
         expenses: 'Expenses',
         reports: 'Reports & Analytics',
         vehicles: 'Vehicle Directory',
-        inspections: 'Digital Inspections',
-        warranties: 'Warranties',
         hr: 'HR & Payroll',
         roles: 'Authentication & Roles',
     };

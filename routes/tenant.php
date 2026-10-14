@@ -28,21 +28,57 @@ Route::middleware([
             abort(404);
         }
 
+        $cleanRelativePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, preg_replace('#^public/#', '', $path));
+
+        // 1. Check current tenant storage
         $baseDir = realpath(storage_path('app/public'));
-        if (!$baseDir) {
+        if ($baseDir) {
+            $fullPath = realpath($baseDir . DIRECTORY_SEPARATOR . $cleanRelativePath);
+            if ($fullPath && str_starts_with($fullPath, $baseDir) && is_file($fullPath)) {
+                return response()->file($fullPath);
+            }
+        }
+
+        // 2. Fallback to central storage
+        $centralBase = realpath(base_path('storage/app/public'));
+        if ($centralBase) {
+            $centralFullPath = realpath($centralBase . DIRECTORY_SEPARATOR . $cleanRelativePath);
+            if ($centralFullPath && str_starts_with($centralFullPath, $centralBase) && is_file($centralFullPath)) {
+                return response()->file($centralFullPath);
+            }
+        }
+
+        abort(404);
+    })->where('path', '.*');
+
+    // Backward compatibility for /storage/ on tenant domains
+    Route::get('/storage/{path}', function ($path) {
+        if ($path === 'undefined' || $path === 'null' || empty($path)) {
             abort(404);
         }
 
-        $cleanRelativePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
-        $fullPath = realpath($baseDir . DIRECTORY_SEPARATOR . $cleanRelativePath);
+        $cleanRelativePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, preg_replace('#^public/#', '', $path));
 
-        // Disallow path traversal outside app/public
-        if (!$fullPath || !str_starts_with($fullPath, $baseDir) || !is_file($fullPath)) {
-            abort(404);
+        // 1. Check current tenant storage
+        $baseDir = realpath(storage_path('app/public'));
+        if ($baseDir) {
+            $fullPath = realpath($baseDir . DIRECTORY_SEPARATOR . $cleanRelativePath);
+            if ($fullPath && str_starts_with($fullPath, $baseDir) && is_file($fullPath)) {
+                return response()->file($fullPath);
+            }
         }
 
-        return response()->file($fullPath);
-    })->where('path', '[a-zA-Z0-9_\-\./]+');
+        // 2. Fallback to central storage
+        $centralBase = realpath(base_path('storage/app/public'));
+        if ($centralBase) {
+            $centralFullPath = realpath($centralBase . DIRECTORY_SEPARATOR . $cleanRelativePath);
+            if ($centralFullPath && str_starts_with($centralFullPath, $centralBase) && is_file($centralFullPath)) {
+                return response()->file($centralFullPath);
+            }
+        }
+
+        abort(404);
+    })->where('path', '.*');
 
     // Tenant Auth Routes (Prefix: tenant.)
     Route::name('tenant.')->group(function () {
@@ -91,6 +127,8 @@ Route::middleware([
             // Workspace APIs
             Route::post('jobs/{job}/complete', [\App\Http\Controllers\GarageOwner\JobWorkspacePaymentController::class, 'complete'])->name('jobs.complete');
             Route::post('jobs/{job}/payment', [\App\Http\Controllers\GarageOwner\JobWorkspacePaymentController::class, 'addPayment'])->name('jobs.payment.store');
+            Route::patch('jobs/{job}/payment/{payment}', [\App\Http\Controllers\GarageOwner\JobWorkspacePaymentController::class, 'updatePayment'])->name('jobs.payment.update');
+            Route::delete('jobs/{job}/payment/{payment}', [\App\Http\Controllers\GarageOwner\JobWorkspacePaymentController::class, 'destroyPayment'])->name('jobs.payment.destroy');
             Route::patch('jobs/{job}/discount', [\App\Http\Controllers\GarageOwner\JobWorkspacePaymentController::class, 'updateDiscount'])->name('jobs.discount.update');
             Route::post('jobs/{job}/items', [\App\Http\Controllers\GarageOwner\JobWorkspaceItemController::class, 'addItem'])->name('jobs.items.store');
             Route::delete('jobs/items/{item}', [\App\Http\Controllers\GarageOwner\JobWorkspaceItemController::class, 'removeItem'])->name('jobs.items.destroy');
@@ -115,11 +153,12 @@ Route::middleware([
             Route::post('payroll', [\App\Http\Controllers\GarageOwner\PayrollController::class, 'store'])->name('payroll.store');
             Route::resource('appointments', \App\Http\Controllers\GarageOwner\AppointmentController::class);
             Route::resource('reminders', \App\Http\Controllers\GarageOwner\ServiceReminderController::class);
-            Route::resource('estimates', \App\Http\Controllers\GarageOwner\EstimateController::class);
+            // Disabled modules (can be re-enabled whenever needed)
+            // Route::resource('estimates', \App\Http\Controllers\GarageOwner\EstimateController::class);
             Route::resource('suppliers', \App\Http\Controllers\GarageOwner\SupplierController::class);
             Route::resource('purchases', \App\Http\Controllers\GarageOwner\PurchaseController::class);
-            Route::resource('inspections', \App\Http\Controllers\GarageOwner\InspectionController::class);
-            Route::resource('warranties', \App\Http\Controllers\GarageOwner\WarrantyController::class);
+            // Route::resource('inspections', \App\Http\Controllers\GarageOwner\InspectionController::class);
+            // Route::resource('warranties', \App\Http\Controllers\GarageOwner\WarrantyController::class);
             
             // Finance / Cashbook
             Route::get('finance', [\App\Http\Controllers\GarageOwner\FinanceController::class, 'index'])->name('finance.index');
@@ -153,6 +192,9 @@ Route::middleware([
             // Vehicles (Central DB accessed via Tenant Context)
             Route::get('vehicles', [\App\Http\Controllers\GarageOwner\VehicleDirectoryController::class, 'index'])->name('vehicles.index');
             Route::get('vehicles/search', [\App\Http\Controllers\GarageOwner\GlobalVehicleController::class, 'search'])->name('vehicles.search');
+            Route::get('vehicles/{vehicle}', [\App\Http\Controllers\GarageOwner\GlobalVehicleController::class, 'show'])->name('vehicles.show');
+            Route::get('vehicles/{vehicle}/print', [\App\Http\Controllers\GarageOwner\GlobalVehicleController::class, 'printReport'])->name('vehicles.print');
+            Route::patch('vehicles/{vehicle}/owner', [\App\Http\Controllers\GarageOwner\GlobalVehicleController::class, 'updateOwner'])->name('vehicles.owner.update');
         });
         
         // Garage Staff Routes

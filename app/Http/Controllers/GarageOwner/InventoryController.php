@@ -49,6 +49,10 @@ class InventoryController extends Controller
 
         $garageId = $this->getGarageId($request);
         $validated['garage_id'] = $garageId;
+
+        if (empty($validated['sku'])) {
+            $validated['sku'] = self::generateSku($validated['item_name'], $garageId);
+        }
         
         $jobId = $validated['job_id'] ?? null;
         unset($validated['job_id']); // Not in inventories table
@@ -98,6 +102,10 @@ class InventoryController extends Controller
             'price' => 'required|numeric|min:0',
         ]);
 
+        if (empty($validated['sku'])) {
+            $validated['sku'] = self::generateSku($validated['item_name'], $inventory->garage_id);
+        }
+
         return DB::transaction(function () use ($inventory, $validated) {
             $inventory->update($validated);
             return redirect()->back()->with('success', 'Item updated successfully.');
@@ -111,5 +119,27 @@ class InventoryController extends Controller
         $inventory->delete();
         
         return redirect()->back()->with('success', 'Item deleted from inventory.');
+    }
+
+    public static function generateSku(?string $itemName = null, ?int $garageId = null): string
+    {
+        $prefix = 'SKU';
+        if (!empty($itemName)) {
+            $cleaned = strtoupper(preg_replace('/[^A-Z0-9]/i', '', $itemName));
+            if (strlen($cleaned) >= 3) {
+                $prefix = substr($cleaned, 0, 3);
+            }
+        }
+
+        $lastId = Inventory::max('id') ?? 0;
+        $candidate = "{$prefix}-" . str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
+
+        $counter = 1;
+        while (Inventory::where('sku', $candidate)->exists()) {
+            $candidate = "{$prefix}-" . str_pad($lastId + 1 + $counter, 4, '0', STR_PAD_LEFT);
+            $counter++;
+        }
+
+        return $candidate;
     }
 }

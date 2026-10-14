@@ -17,4 +17,21 @@ class GarageInvoiceSetting extends Model
     {
         return $this->belongsTo(Garage::class);
     }
+
+    public function getLogoUrlAttribute($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://') || str_starts_with($value, 'data:')) {
+            return $value;
+        }
+
+        $clean = preg_replace('#^/?storage/#', '', $value);
+        $clean = preg_replace('#^public/#', '', $clean);
+        $clean = preg_replace('#^/?tenant-media/#', '', $clean);
+
+        return '/tenant-media/' . ltrim($clean, '/');
+    }
 }

@@ -10,7 +10,8 @@ import JobDetailsHeader from './Partials/JobDetailsHeader';
 import JobPayModal from './Partials/JobPayModal';
 
 export default function Workspace({ auth, job, inventory, services, suppliers }) {
-    const totalAdvance = job.payments?.reduce((sum, payment) => sum + parseFloat(payment.amount), 0) || 0;
+    const activePayments = job.payments?.filter(payment => !payment.is_void) || [];
+    const totalAdvance = activePayments.reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
     const subTotal = parseFloat(job.total_cost || 0);
     const discount = parseFloat(job.discount || 0);
     const balanceDue = Math.max(0, subTotal - discount - totalAdvance);
@@ -135,7 +136,7 @@ export default function Workspace({ auth, job, inventory, services, suppliers })
                 {/* Left Side: Job Details */}
                 <div className="w-full md:w-2/3 space-y-6">
                     
-                    <JobDetailsHeader job={job} subTotal={subTotal} discount={discount} totalAdvance={totalAdvance} balanceDue={balanceDue} />
+                    <JobDetailsHeader job={job} subTotal={subTotal} discount={discount} totalAdvance={totalAdvance} balanceDue={balanceDue} auth={auth} />
 
                     <JobNotes job={job} />
 
@@ -146,7 +147,7 @@ export default function Workspace({ auth, job, inventory, services, suppliers })
                 <JobCart job={job} inventory={inventory} services={services} suppliers={suppliers} subTotal={subTotal} discount={discount} />
             </div>
 
-            <JobPayModal job={job} />
+            <JobPayModal job={job} balanceDue={balanceDue} />
         </AuthenticatedLayout>
     );
 }

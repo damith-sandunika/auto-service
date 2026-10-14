@@ -20,9 +20,11 @@ class JobWorkspacePaymentController extends Controller
         $this->checkGarageAccess($job->garage_id);
 
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|string|in:cash,card,bank_transfer,credit',
         ]);
+
+        $user = Auth::user();
 
         DB::beginTransaction();
         try {
@@ -31,6 +33,8 @@ class JobWorkspacePaymentController extends Controller
                 'job_id' => $job->id,
                 'amount' => $validated['amount'],
                 'payment_method' => $validated['payment_method'],
+                'created_by' => $user?->id,
+                'created_by_name' => $user?->name ?? 'Staff',
             ]);
 
             CashbookTransaction::create([
@@ -44,12 +48,156 @@ class JobWorkspacePaymentController extends Controller
                 'reference_id' => $payment->id,
             ]);
 
+            if (\Illuminate\Support\Facades\Schema::hasTable('job_timelines')) {
+                \App\Models\JobTimeline::create([
+                    'garage_id' => $job->garage_id,
+                    'job_id' => $job->id,
+                    'user_id' => $user?->id,
+                    'action' => 'payment_added',
+                    'description' => json_encode([
+                        'type' => 'advance_payment',
+                        'title' => 'Advance Payment Added',
+                        'amount' => (float) $validated['amount'],
+                        'method' => $validated['payment_method'],
+                        'staff_name' => $user?->name ?? 'Staff',
+                    ])
+                ]);
+            }
+
             DB::commit();
             return back()->with('success', 'Advance payment added successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Job Advance Payment Error', ['error' => $e->getMessage()]);
             return back()->withErrors(['error' => 'Failed to process payment.']);
+        }
+    }
+
+    public function updatePayment(Request $request, Job $job, \App\Models\JobPayment $payment)
+    {
+        $this->checkGarageAccess($job->garage_id);
+
+        if ($payment->job_id !== $job->id) {
+            abort(404);
+        }
+
+        if ($payment->is_void) {
+            return back()->withErrors(['error' => 'Cannot edit a voided payment.']);
+        }
+
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|string|in:cash,card,bank_transfer,credit',
+        ]);
+
+        $user = Auth::user();
+        $oldAmount = (float) $payment->amount;
+        $oldMethod = $payment->payment_method;
+
+        DB::beginTransaction();
+        try {
+            $payment->update([
+                'amount' => $validated['amount'],
+                'payment_method' => $validated['payment_method'],
+                'edited_by' => $user?->id,
+                'edited_by_name' => $user?->name ?? 'Staff',
+                'edited_at' => now(),
+            ]);
+
+            // Sync Cashbook Transaction
+            $cashbook = CashbookTransaction::where('reference_type', 'JobPayment')
+                ->where('reference_id', $payment->id)
+                ->first();
+
+            if ($cashbook) {
+                $cashbook->update([
+                    'amount' => $validated['amount'],
+                    'description' => "Advance payment for Job #" . $job->id . " (" . ucfirst(str_replace('_', ' ', $validated['payment_method'])) . ") [Edited]",
+                ]);
+            }
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('job_timelines')) {
+                \App\Models\JobTimeline::create([
+                    'garage_id' => $job->garage_id,
+                    'job_id' => $job->id,
+                    'user_id' => $user?->id,
+                    'action' => 'payment_edited',
+                    'description' => json_encode([
+                        'type' => 'payment_edited',
+                        'title' => 'Payment Updated',
+                        'old_amount' => $oldAmount,
+                        'new_amount' => (float) $validated['amount'],
+                        'old_method' => $oldMethod,
+                        'new_method' => $validated['payment_method'],
+                        'edited_by' => $user?->name ?? 'Staff',
+                        'edited_at' => now()->toDateTimeString(),
+                    ])
+                ]);
+            }
+
+            DB::commit();
+            return back()->with('success', 'Payment updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Job Payment Update Error', ['error' => $e->getMessage()]);
+            return back()->withErrors(['error' => 'Failed to update payment.']);
+        }
+    }
+
+    public function destroyPayment(Request $request, Job $job, \App\Models\JobPayment $payment)
+    {
+        $this->checkGarageAccess($job->garage_id);
+
+        if ($payment->job_id !== $job->id) {
+            abort(404);
+        }
+
+        if ($payment->is_void) {
+            return back()->withErrors(['error' => 'Payment is already voided.']);
+        }
+
+        $user = Auth::user();
+        $reason = $request->input('reason', 'Voided by staff');
+
+        DB::beginTransaction();
+        try {
+            $payment->update([
+                'is_void' => true,
+                'voided_by' => $user?->id,
+                'voided_by_name' => $user?->name ?? 'Staff',
+                'voided_at' => now(),
+                'void_reason' => $reason,
+            ]);
+
+            // Remove or delete from Cashbook
+            CashbookTransaction::where('reference_type', 'JobPayment')
+                ->where('reference_id', $payment->id)
+                ->delete();
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('job_timelines')) {
+                \App\Models\JobTimeline::create([
+                    'garage_id' => $job->garage_id,
+                    'job_id' => $job->id,
+                    'user_id' => $user?->id,
+                    'action' => 'payment_voided',
+                    'description' => json_encode([
+                        'type' => 'payment_voided',
+                        'title' => 'Payment Voided / Deleted',
+                        'amount' => (float) $payment->amount,
+                        'method' => $payment->payment_method,
+                        'voided_by' => $user?->name ?? 'Staff',
+                        'voided_at' => now()->toDateTimeString(),
+                        'reason' => $reason,
+                    ])
+                ]);
+            }
+
+            DB::commit();
+            return back()->with('success', 'Payment deleted and voided with audit log.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Job Payment Void Error', ['error' => $e->getMessage()]);
+            return back()->withErrors(['error' => 'Failed to void payment.']);
         }
     }
 
@@ -117,8 +265,8 @@ class JobWorkspacePaymentController extends Controller
                 ]);
             }
 
-            // Transfer advance payments to invoice payments
-            foreach ($job->payments as $jp) {
+            // Transfer advance payments to invoice payments (only active non-voided payments)
+            foreach ($job->payments()->where('is_void', false)->get() as $jp) {
                 \App\Models\Payment::firstOrCreate(
                     [
                         'invoice_id' => $invoice->id,

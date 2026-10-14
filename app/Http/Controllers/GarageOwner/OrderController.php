@@ -24,46 +24,148 @@ class OrderController extends Controller
             $garageId = $request->query('branch_id');
         }
 
-        $invoices = Invoice::with(['job.vehicle', 'job.owner', 'payments'])
-            ->when($garageId, function($q) use ($garageId) {
-                return $q->where('garage_id', $garageId);
-            })
-            ->orderBy('id', 'desc')
-            ->paginate(15, ['*'], 'invoices_page')
-            ->withQueryString();
-            
-        $jobs = Job::with('vehicle')
-            ->when($garageId, function($q) use ($garageId) {
-                return $q->where('garage_id', $garageId);
-            })
-            ->orderBy('id', 'desc')
-            ->paginate(15, ['*'], 'jobs_page')
-            ->withQueryString();
+        $search = trim($request->query('search', ''));
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        // 1. Query Active Invoices
+        $invoiceQuery = Invoice::with(['job.vehicle', 'job.owner', 'payments']);
+
+        if ($garageId) {
+            $invoiceQuery->where('garage_id', $garageId);
+        }
+        if ($startDate) {
+            $invoiceQuery->whereDate('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $invoiceQuery->whereDate('created_at', '<=', $endDate);
+        }
+        if ($search !== '') {
+            $cleanSearch = ltrim($search, '#');
+            $matchingVehicleIds = \App\Models\Vehicle::where('vehicle_number', 'LIKE', "%{$cleanSearch}%")
+                ->orWhere('vehicle_number', 'LIKE', "%{$search}%")
+                ->pluck('id');
+
+            $invoiceQuery->where(function ($q) use ($search, $cleanSearch, $matchingVehicleIds) {
+                $q->where('invoice_number', $cleanSearch)
+                  ->orWhere('invoice_number', 'LIKE', "%{$cleanSearch}%")
+                  ->orWhere('id', $cleanSearch)
+                  ->orWhereHas('job', function ($jq) use ($search, $matchingVehicleIds) {
+                      $jq->whereIn('vehicle_id', $matchingVehicleIds)
+                         ->orWhereHas('owner', function ($oq) use ($search) {
+                             $oq->where('name', 'LIKE', "%{$search}%")
+                                ->orWhere('phone', 'LIKE', "%{$search}%");
+                         });
+                  });
+            });
+        }
+
+        $activeInvoices = $invoiceQuery->get();
+
+        // 2. Query Deleted Orders (Anti-Fraud Audit Trail)
+        $deletedQuery = \App\Models\DeletedOrder::query();
+
+        if ($garageId) {
+            $deletedQuery->where('garage_id', $garageId);
+        }
+        if ($startDate) {
+            $deletedQuery->whereDate('created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $deletedQuery->whereDate('created_at', '<=', $endDate);
+        }
+        if ($search !== '') {
+            $cleanSearch = ltrim($search, '#');
+            $deletedQuery->where(function ($q) use ($search, $cleanSearch) {
+                $q->where('invoice_number', $cleanSearch)
+                  ->orWhere('invoice_number', 'LIKE', "%{$cleanSearch}%")
+                  ->orWhere('customer_name', 'LIKE', "%{$search}%")
+                  ->orWhere('vehicle_number', 'LIKE', "%{$search}%")
+                  ->orWhere('deleted_by_name', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $deletedOrders = $deletedQuery->get();
+
+        // 3. Map & Merge into a single continuous sequential audit list
+        $allOrders = collect();
+
+        foreach ($activeInvoices as $inv) {
+            $totalPaid = $inv->payments->reduce(fn($acc, $p) => $acc + (float)$p->amount, 0);
+            $fullAmount = (float) $inv->total_amount;
+            $balance = max(0, $fullAmount - $totalPaid);
+
+            $allOrders->push([
+                'id' => $inv->id,
+                'invoice_number' => (int) ($inv->invoice_number ?: $inv->id),
+                'display_number' => '#' . ($inv->invoice_number ?: $inv->id),
+                'vehicle_plate' => $inv->job?->vehicle?->license_plate ?? $inv->job?->vehicle?->vehicle_number ?? 'Unknown',
+                'customer_name' => $inv->job?->owner?->name ?? $inv->job?->vehicle?->owner?->name ?? 'Walk-in Customer',
+                'total_amount' => $fullAmount,
+                'total_paid' => $totalPaid,
+                'balance' => $balance,
+                'status' => $inv->status,
+                'job_status' => $inv->job?->status ?? 'completed',
+                'is_deleted' => false,
+                'deleted_by_name' => null,
+                'deleted_at' => null,
+                'created_at' => $inv->created_at ? $inv->created_at->format('Y-m-d H:i') : null,
+            ]);
+        }
+
+        foreach ($deletedOrders as $del) {
+            $allOrders->push([
+                'id' => 'del-' . $del->id,
+                'invoice_number' => (int) ($del->invoice_number ?: $del->id),
+                'display_number' => '#' . ($del->invoice_number ?: $del->id),
+                'vehicle_plate' => $del->vehicle_number ?: 'Unknown',
+                'customer_name' => $del->customer_name ?: 'Walk-in Customer',
+                'total_amount' => (float) $del->total_amount,
+                'total_paid' => 0,
+                'balance' => 0,
+                'status' => 'deleted',
+                'job_status' => null,
+                'is_deleted' => true,
+                'deleted_by_name' => $del->deleted_by_name ?: 'Staff',
+                'deleted_at' => $del->created_at ? $del->created_at->format('M d, Y h:i A') : 'N/A',
+                'created_at' => $del->created_at ? $del->created_at->format('Y-m-d H:i') : null,
+            ]);
+        }
+
+        // Strictly order by sequence number descending
+        $sortedOrders = $allOrders->sortByDesc('invoice_number')->values();
+
+        // 4. Paginate
+        $page = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage('invoices_page');
+        $perPage = 15;
+        $currentPageItems = $sortedOrders->slice(($page - 1) * $perPage, $perPage)->values();
+
+        $paginatedOrders = new \Illuminate\Pagination\LengthAwarePaginator(
+            $currentPageItems,
+            $sortedOrders->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'pageName' => 'invoices_page',
+                'query' => $request->query(),
+            ]
+        );
 
         $branches = [];
         if ($user->role === 'company_owner') {
             $branches = \App\Models\Garage::where('owner_id', $user->id)->get(['id', 'name']);
         }
 
-        $deletedOrders = \App\Models\DeletedOrder::when($garageId, function($q) use ($garageId) {
-                return $q->where('garage_id', $garageId);
-            })
-            ->orderBy('id', 'desc')
-            ->paginate(15, ['*'], 'deleted_page')
-            ->withQueryString();
-
-        $activeCount = Invoice::when($garageId, fn($q) => $q->where('garage_id', $garageId))->count();
-        $deletedCount = \App\Models\DeletedOrder::when($garageId, fn($q) => $q->where('garage_id', $garageId))->count();
-
         return Inertia::render('GarageOwner/Orders', [
-            'invoices' => $invoices,
-            'jobs' => $jobs,
+            'invoices' => $paginatedOrders,
             'branches' => $branches,
             'selectedBranchId' => $garageId,
-            'deletedOrders' => $deletedOrders,
-            'activeCount' => $activeCount,
-            'deletedCount' => $deletedCount,
-            'currentTab' => $request->query('tab', 'active'),
+            'filters' => [
+                'search' => $search,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ],
         ]);
     }
 

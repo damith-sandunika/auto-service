@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/react';
 import Sidebar from './Partials/Sidebar';
 import Topbar from './Partials/Topbar';
 import NetworkStatusBanner from '@/Components/NetworkStatusBanner';
+import ToastContainer from '@/Components/ToastContainer';
 
 export default function AuthenticatedLayout({ header, headerActions, children, fullWidth = false }) {
     const user = usePage().props.auth.user;
@@ -128,15 +129,12 @@ export default function AuthenticatedLayout({ header, headerActions, children, f
                 // Allow finance/cashbook for POS or expenses users loosely, or just give it to owner
                 if (perms === 'all' || hasPerm('pos') || hasPerm('expenses')) othersSubItems.push({ name: 'Cashbook', href: route('owner.finance.index'), active: route().current('owner.finance.*') });
                 if (hasPerm('vehicles')) othersSubItems.push({ name: 'Vehicles', href: route('owner.vehicles.index'), active: route().current('owner.vehicles.*') });
-                if (hasPerm('invoices')) othersSubItems.push({ name: 'Estimates', href: route('owner.estimates.index'), active: route().current('owner.estimates.*') });
-                if (hasPerm('inspections')) othersSubItems.push({ name: 'Inspections', href: route('owner.inspections.index'), active: route().current('owner.inspections.*') });
-                if (hasPerm('warranties')) othersSubItems.push({ name: 'Warranties', href: route('owner.warranties.index'), active: route().current('owner.warranties.*') });
 
                 if (othersSubItems.length > 0) {
                     links.push({
                         name: 'Others',
                         isDropdown: true,
-                        active: route().current('owner.finance.*') || route().current('owner.vehicles.*') || route().current('owner.estimates.*') || route().current('owner.inspections.*') || route().current('owner.warranties.*'),
+                        active: route().current('owner.finance.*') || route().current('owner.vehicles.*'),
                         icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>,
                         subItems: othersSubItems
                     });
@@ -266,6 +264,9 @@ export default function AuthenticatedLayout({ header, headerActions, children, f
                     <div className="h-8"></div>
                 </main>
             </div>
+
+            {/* Global Top-Right Toast Notifications */}
+            <ToastContainer />
 
             {/* Custom Styles */}
             <style dangerouslySetInnerHTML={{

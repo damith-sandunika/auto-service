@@ -140,6 +140,13 @@ class HandleInertiaRequests extends Middleware
             'has_branches' => count($branches) > 0,
             'global_alerts' => $alerts,
             'active_garage' => $activeGarage,
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+                'warning' => fn () => $request->session()->get('warning'),
+                'info' => fn () => $request->session()->get('info'),
+                'message' => fn () => $request->session()->get('message'),
+            ],
         ];
     }
 }

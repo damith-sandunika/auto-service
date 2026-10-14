@@ -34,7 +34,7 @@ class GlobalVehicleController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        $query = $vehicle->jobs()->where('status', 'completed');
+        $query = \App\Models\Job::where('vehicle_id', $vehicle->id)->where('status', 'completed');
         
         if ($startDate) {
             $query->whereDate('created_at', '>=', $startDate);
@@ -67,7 +67,11 @@ class GlobalVehicleController extends Controller
             ];
         });
 
-        $ownersHistory = $vehicle->owners()->with('customer')->orderBy('created_at', 'desc')->get();
+        $ownersHistory = \App\Models\VehicleOwner::where('vehicle_id', $vehicle->id)->with('customer')->orderBy('created_at', 'desc')->get();
+        $currentOwner = \App\Models\VehicleOwner::where('vehicle_id', $vehicle->id)->where('is_current', true)->with('customer')->first();
+        if ($currentOwner) {
+            $vehicle->setRelation('owner', $currentOwner->customer);
+        }
         $myCustomers = User::where('garage_id', $this->getGarageId($request))->where('role', 'vehicle_owner')->get();
 
         return Inertia::render('GarageOwner/Vehicles/GlobalProfile', [
@@ -84,12 +88,10 @@ class GlobalVehicleController extends Controller
 
     public function printReport(Request $request, Vehicle $vehicle)
     {
-        // removed load owner
-
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        $query = $vehicle->jobs()->where('status', 'completed');
+        $query = \App\Models\Job::where('vehicle_id', $vehicle->id)->where('status', 'completed');
         
         if ($startDate) {
             $query->whereDate('created_at', '>=', $startDate);
@@ -119,6 +121,11 @@ class GlobalVehicleController extends Controller
                     })
                 ];
             });
+
+        $currentOwner = \App\Models\VehicleOwner::where('vehicle_id', $vehicle->id)->where('is_current', true)->with('customer')->first();
+        if ($currentOwner) {
+            $vehicle->setRelation('owner', $currentOwner->customer);
+        }
 
         return Inertia::render('GarageOwner/Vehicles/PrintReport', [
             'vehicle' => $vehicle,

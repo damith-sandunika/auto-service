@@ -31,6 +31,12 @@ class JobMedia extends Model
     
     public function getFileUrlAttribute()
     {
-        return Storage::url($this->file_path);
+        if (empty($this->file_path)) {
+            return null;
+        }
+        $clean = preg_replace('#^/?storage/#', '', $this->file_path);
+        $clean = preg_replace('#^public/#', '', $clean);
+        $clean = preg_replace('#^/?tenant-media/#', '', $clean);
+        return '/tenant-media/' . ltrim($clean, '/');
     }
 }

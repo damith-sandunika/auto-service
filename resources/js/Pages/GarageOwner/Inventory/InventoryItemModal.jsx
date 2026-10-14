@@ -15,6 +15,13 @@ export default function InventoryItemModal({ show, onClose, editingItem, locatio
         job_id: '' // Only used when creating
     });
 
+    const generateSku = (itemName = '') => {
+        const cleaned = (itemName || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        const prefix = cleaned.length >= 3 ? cleaned.slice(0, 3) : 'SKU';
+        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+        return `${prefix}-${randomSuffix}`;
+    };
+
     React.useEffect(() => {
         if (editingItem) {
             setData({ 
@@ -23,12 +30,40 @@ export default function InventoryItemModal({ show, onClose, editingItem, locatio
                 quantity: editingItem.quantity, 
                 price: editingItem.price,
                 inventory_location_id: editingItem.inventory_location_id || '',
-                job_id: ''
+                job_id: '',
+                isSkuAuto: false
             });
-        } else {
+        } else if (show) {
             reset();
+            const initialSku = generateSku('');
+            setData(prev => ({
+                ...prev,
+                sku: initialSku,
+                isSkuAuto: true
+            }));
         }
-    }, [editingItem]);
+    }, [editingItem, show]);
+
+    const handleAutoGenerateClick = () => {
+        setData(prev => ({
+            ...prev,
+            sku: generateSku(prev.item_name),
+            isSkuAuto: true
+        }));
+    };
+
+    const handleItemNameChange = (e) => {
+        const newName = e.target.value;
+        setData(prev => {
+            const shouldAutoUpdateSku = !editingItem && (!prev.sku || prev.isSkuAuto);
+            return {
+                ...prev,
+                item_name: newName,
+                sku: shouldAutoUpdateSku ? generateSku(newName) : prev.sku,
+                isSkuAuto: shouldAutoUpdateSku ? true : prev.isSkuAuto
+            };
+        });
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -45,13 +80,40 @@ export default function InventoryItemModal({ show, onClose, editingItem, locatio
                 <h2 className="text-lg font-black text-slate-800 mb-6">{editingItem ? 'Edit Inventory Item' : 'Add New Item (Receive Stock)'}</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <InputLabel htmlFor="sku" value="SKU (Optional)" />
-                        <TextInput id="sku" type="text" className="mt-1 block w-full bg-slate-50 border-slate-200 text-slate-800 font-mono text-sm" value={data.sku} onChange={(e) => setData('sku', e.target.value)} />
+                        <div className="flex items-center justify-between mb-1">
+                            <InputLabel htmlFor="sku" value="SKU" />
+                            <button
+                                type="button"
+                                onClick={handleAutoGenerateClick}
+                                className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors"
+                                title="Click to automatically generate a SKU"
+                            >
+                                <svg className="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                Auto Generate
+                            </button>
+                        </div>
+                        <TextInput
+                            id="sku"
+                            type="text"
+                            placeholder="e.g. CAS-4819 or Auto Generated"
+                            className="block w-full bg-slate-50 border-slate-200 text-slate-800 font-mono text-sm uppercase placeholder-slate-400 focus:bg-white"
+                            value={data.sku}
+                            onChange={(e) => setData(prev => ({ ...prev, sku: e.target.value.toUpperCase(), isSkuAuto: false }))}
+                        />
                         <InputError message={errors.sku} className="mt-2" />
                     </div>
                     <div>
                         <InputLabel htmlFor="item_name" value="Item Name" />
-                        <TextInput id="item_name" type="text" className="mt-1 block w-full bg-slate-50 border-slate-200 text-slate-800" value={data.item_name} onChange={(e) => setData('item_name', e.target.value)} />
+                        <TextInput
+                            id="item_name"
+                            type="text"
+                            placeholder="e.g. Castrol EDGE 5W-30 (1L)"
+                            className="mt-1 block w-full bg-slate-50 border-slate-200 text-slate-800 focus:bg-white"
+                            value={data.item_name}
+                            onChange={handleItemNameChange}
+                        />
                         <InputError message={errors.item_name} className="mt-2" />
                     </div>
                     

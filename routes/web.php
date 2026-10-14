@@ -65,5 +65,21 @@ foreach (config('tenancy.central_domains') as $domain) {
 
         require __DIR__.'/auth.php';
         
+        // Serve Central Storage Files safely if web server symlink fails
+        Route::get('/storage/{path}', function ($path) {
+            if ($path === 'undefined' || $path === 'null' || empty($path)) {
+                abort(404);
+            }
+
+            $cleanRelativePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, preg_replace('#^public/#', '', $path));
+            $centralBase = realpath(base_path('storage/app/public'));
+            if ($centralBase) {
+                $fullPath = realpath($centralBase . DIRECTORY_SEPARATOR . $cleanRelativePath);
+                if ($fullPath && str_starts_with($fullPath, $centralBase) && is_file($fullPath)) {
+                    return response()->file($fullPath);
+                }
+            }
+            abort(404);
+        })->where('path', '.*');
     });
 }

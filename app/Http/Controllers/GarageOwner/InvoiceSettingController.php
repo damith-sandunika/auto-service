@@ -24,7 +24,7 @@ class InvoiceSettingController extends Controller
                 'business_name' => $garage->name,
                 'email' => $garage->email,
                 'phone' => $garage->phone,
-                'logo_url' => $garage->logo_path ? Storage::url($garage->logo_path) : null,
+                'logo_url' => $garage->logo_path ? '/tenant-media/' . $garage->logo_path : null,
                 'primary_color' => '#2563eb',
                 'secondary_color' => '#f8fafc',
                 'text_color' => '#334155',
@@ -63,8 +63,9 @@ class InvoiceSettingController extends Controller
         ]);
 
         if ($request->hasFile('logo')) {
-            $path = $request->file('logo')->store('public/invoice_logos');
-            $validated['logo_url'] = Storage::url($path);
+            $path = $request->file('logo')->store('invoice_logos', 'public');
+            $clean = preg_replace('#^public/#', '', $path);
+            $validated['logo_url'] = '/tenant-media/' . ltrim($clean, '/');
         }
 
         $settings->update($validated);

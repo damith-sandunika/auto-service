@@ -36,7 +36,7 @@ export default function Users({ users, garages }) {
                             <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider"><tr><th className="px-6 py-4">Name</th><th className="px-6 py-4">Role</th><th className="px-6 py-4">Associated Garage</th><th className="px-6 py-4">Status</th><th className="px-6 py-4 text-right">Actions</th></tr></thead>
                             <tbody className="divide-y divide-slate-100">
                                 {users?.length > 0 ? users.map((u) => (
-                                    <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <tr key={`${u.garage_id || u.garage?.id || 'tenant'}-${u.id}`} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="px-6 py-4 font-medium text-slate-800 flex items-center gap-3"><div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-black">{u.name.charAt(0)}</div><div><div className="font-bold text-slate-800">{u.name}</div><div className="text-xs text-slate-500 mt-0.5">{u.email}</div></div></td>
                                         <td className="px-6 py-4"><span className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider ${roleColors[u.role] || roleColors.vehicle_owner}`}>{formatRole(u.role)}</span></td>
                                         <td className="px-6 py-4 font-medium text-slate-600">{u.garage ? u.garage.name : '-'}</td>

@@ -65,7 +65,10 @@ class VehicleController extends Controller
                             'branch_phone' => $j->garage?->phone,
                             'status' => $j->status,
                             'description' => $j->description,
+                            'mileage' => $j->mileage ?? 'N/A',
                             'total_cost' => (float) $j->total_cost,
+                            'date' => $j->created_at ? $j->created_at->format('Y-m-d') : 'N/A',
+                            'time' => $j->created_at ? $j->created_at->format('h:i A') : 'N/A',
                             'created_at' => $j->created_at ? $j->created_at->format('M d, Y h:i A') : 'N/A',
                             'raw_date' => $j->created_at ? $j->created_at->timestamp : 0,
                             'items_count' => $j->items->count(),
@@ -109,6 +112,15 @@ class VehicleController extends Controller
         $totalSpend = array_sum(array_column($serviceHistory, 'total_cost'));
         $companiesCount = count(array_unique(array_column($serviceHistory, 'company_id')));
         $branchesCount = count(array_unique(array_column($serviceHistory, 'branch_id')));
+
+        $currentOwner = collect($ownershipHistory)->firstWhere('is_current', true) ?? collect($ownershipHistory)->first();
+        if ($currentOwner) {
+            $vehicle->setRelation('owner', (object) [
+                'name' => $currentOwner['name'],
+                'phone' => $currentOwner['phone'],
+                'email' => $currentOwner['email'] ?? null,
+            ]);
+        }
 
         return Inertia::render('SuperAdmin/Vehicles/Show', [
             'vehicle' => $vehicle,

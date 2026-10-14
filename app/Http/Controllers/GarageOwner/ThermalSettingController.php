@@ -34,8 +34,9 @@ class ThermalSettingController extends Controller
         );
         
         // Append original garage logo and thermal logo so the preview can use it
-        $settings->original_logo_url = $garage->logo_path ? Storage::url($garage->logo_path) : null;
-        $settings->logo_url = $settings->logo_path ? Storage::url($settings->logo_path) : null;
+        $settings->original_logo_url = $garage->logo_path ? '/tenant-media/' . $garage->logo_path : null;
+        $cleanThermal = $settings->logo_path ? preg_replace('#^public/#', '', $settings->logo_path) : null;
+        $settings->logo_url = $cleanThermal ? '/tenant-media/' . ltrim($cleanThermal, '/') : $settings->original_logo_url;
         
         return Inertia::render('GarageOwner/Settings/ThermalSettings', [
             'settings' => $settings

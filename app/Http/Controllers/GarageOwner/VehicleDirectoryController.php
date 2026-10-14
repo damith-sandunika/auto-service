@@ -24,12 +24,21 @@ class VehicleDirectoryController extends Controller
 
         $customerIds = $customers->pluck('id');
         
-        $vehicleOwners = \App\Models\VehicleOwner::whereIn('customer_id', $customerIds)->get();
-        $vehicleIds = $vehicleOwners->pluck('vehicle_id');
+        $vehicleOwners = \App\Models\VehicleOwner::whereIn('customer_id', $customerIds)
+            ->with('customer')
+            ->get()
+            ->keyBy('vehicle_id');
+        $vehicleIds = $vehicleOwners->keys();
         
         $vehicles = Vehicle::whereIn('id', $vehicleIds)
             ->orderBy('created_at', 'desc')
             ->paginate(15);
+
+        $vehicles->getCollection()->transform(function ($v) use ($vehicleOwners) {
+            $ownerRec = $vehicleOwners->get($v->id);
+            $v->owner = $ownerRec?->customer;
+            return $v;
+        });
 
         return Inertia::render('GarageOwner/Vehicles/Index', [
             'customers' => $customers,

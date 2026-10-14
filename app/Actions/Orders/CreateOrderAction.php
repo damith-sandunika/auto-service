@@ -11,7 +11,10 @@ class CreateOrderAction
     {
         $data['garage_id'] = $garageId;
         
-        return DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($data, $garageId) {
+            if (empty($data['invoice_number'])) {
+                $data['invoice_number'] = (string) \App\Services\SequenceGenerator::getNextNumber($garageId, 'invoice');
+            }
             $invoice = Invoice::create($data);
             
             \Illuminate\Support\Facades\Log::channel('audit')->info('Invoice Created', [
