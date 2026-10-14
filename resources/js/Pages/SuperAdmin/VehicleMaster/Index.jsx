@@ -114,7 +114,7 @@ export default function VehicleMasterIndex({ makes = [], filters = {} }) {
                         )}
                     </form>
                     <div className="text-xs font-bold text-slate-500 whitespace-nowrap">
-                        Total Brands: <span className="text-indigo-600 font-black">{makes.length}</span> makes
+                        Total: <span className="text-indigo-600 font-black">{makes?.length || 0}</span> Brands &bull; <span className="text-blue-600 font-black">{makes?.reduce((acc, m) => acc + (m.models?.length || 0), 0) || 0}</span> Models
                     </div>
                 </div>
 
