@@ -5,6 +5,7 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import SearchableSelect from '@/Components/SearchableSelect';
+import SafeButton from '@/Components/SafeButton';
 
 export default function OrderPaymentModal({ show, onClose, payingInvoice }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -52,7 +53,7 @@ export default function OrderPaymentModal({ show, onClose, payingInvoice }) {
                     </div>
                     <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
                         <button type="button" onClick={onClose} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 font-bold text-sm">Cancel</button>
-                        <button type="submit" disabled={processing} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-sm transition-colors disabled:opacity-50">Add Payment</button>
+                        <SafeButton type="submit" loading={processing} loadingText="Adding..." className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-sm shadow-md">Add Payment</SafeButton>
                     </div>
                 </form>
             </div>

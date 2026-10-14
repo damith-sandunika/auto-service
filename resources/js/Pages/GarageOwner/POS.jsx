@@ -4,6 +4,8 @@ import { Head, Link, useForm, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import SearchableSelect from '@/Components/SearchableSelect';
 import Pagination from '@/Components/Pagination';
+import SafeButton from '@/Components/SafeButton';
+import useFormDraft from '@/Hooks/useFormDraft';
 
 // Tab config — NO "done" tab on the board
 const TABS = [
@@ -165,9 +167,9 @@ function DonePaymentModal({ job, onClose, onSubmit, processing }) {
                         <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors text-sm">
                             Cancel
                         </button>
-                        <button type="submit" disabled={processing} className="flex-1 py-2.5 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700 transition-colors text-sm shadow-md disabled:opacity-60">
-                            {processing ? 'Processing...' : '✓ Mark as Done'}
-                        </button>
+                        <SafeButton type="submit" loading={processing} loadingText="Processing..." className="flex-1 py-2.5 rounded-xl font-black text-white bg-emerald-600 hover:bg-emerald-700 shadow-md text-sm">
+                            ✓ Mark as Done
+                        </SafeButton>
                     </div>
                 </form>
             </div>
@@ -196,10 +198,13 @@ export default function POS({ auth, jobs, customers, mechanics, branches, select
         description: ''
     });
 
+    const { hasDraft, clearDraft } = useFormDraft('pos_new_job_draft', data, setData);
+
     const submitNewJob = (e) => {
         e.preventDefault();
         post(route('owner.pos.storeJob') + (selectedBranchId ? '?branch_id=' + selectedBranchId : ''), {
             onSuccess: () => {
+                clearDraft();
                 setIsNewJobModalOpen(false);
                 reset();
                 setIsNewCustomer(false);
@@ -420,6 +425,16 @@ export default function POS({ auth, jobs, customers, mechanics, branches, select
             <Modal show={isNewJobModalOpen} onClose={() => setIsNewJobModalOpen(false)}>
                 <form onSubmit={submitNewJob} className="p-6">
                     <h2 className="text-xl font-bold mb-4">Start New Job</h2>
+
+                    {hasDraft && (
+                        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between text-xs text-amber-900 font-bold">
+                            <span>⚡ Unsaved draft auto-restored after reload/power cut.</span>
+                            <button type="button" onClick={() => { clearDraft(); reset(); }} className="text-rose-600 hover:underline font-black ml-2 uppercase text-[10px]">
+                                Discard Draft
+                            </button>
+                        </div>
+                    )}
+
                     <div className="space-y-6">
                         {/* CUSTOMER SECTION */}
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -492,7 +507,9 @@ export default function POS({ auth, jobs, customers, mechanics, branches, select
 
                         <div className="pt-2 flex justify-end space-x-3">
                             <button type="button" onClick={() => setIsNewJobModalOpen(false)} className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-lg text-sm">Cancel</button>
-                            <button type="submit" disabled={processing} className="px-5 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md shadow-blue-500/20 text-sm">Start Job</button>
+                            <SafeButton type="submit" loading={processing} loadingText="Creating..." className="px-5 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md shadow-blue-500/20 text-sm">
+                                Start Job
+                            </SafeButton>
                         </div>
                     </div>
                 </form>

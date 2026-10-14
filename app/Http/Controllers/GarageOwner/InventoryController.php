@@ -8,6 +8,7 @@ use Inertia\Inertia;
 
 use App\Models\Inventory;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Traits\JobAccessTrait;
 
 class InventoryController extends Controller
@@ -16,10 +17,16 @@ class InventoryController extends Controller
     public function index(Request $request)
     {
         $garageId = $this->getGarageId($request);
-        $inventory = Inventory::with('location')->where('garage_id', $garageId)->paginate(20);
+        $inventory = Inventory::with('location')->where('garage_id', $garageId)->orderBy('id', 'desc')->paginate(20);
         $lowStockCount = Inventory::where('garage_id', $garageId)->where('quantity', '<=', 5)->count();
         $locations = \App\Models\InventoryLocation::where('garage_id', $garageId)->get();
-        $activeOrders = \App\Models\Job::with('vehicle')->where('garage_id', $garageId)->where('status', '!=', 'completed')->get();
+        $activeOrders = \App\Models\Job::with('vehicle:id,vehicle_number,license_plate')
+            ->select(['id', 'vehicle_id', 'status', 'garage_id'])
+            ->where('garage_id', $garageId)
+            ->whereNotIn('status', ['completed', 'done'])
+            ->orderBy('id', 'desc')
+            ->take(100)
+            ->get();
 
         return Inertia::render('GarageOwner/Inventory', [
             'inventory' => $inventory,
@@ -34,7 +41,7 @@ class InventoryController extends Controller
         $validated = $request->validate([
             'item_name' => 'required|string|max:255',
             'sku' => 'nullable|string|max:255',
-            'quantity' => 'required|integer|min:0',
+            'quantity' => 'required|numeric|min:0.01',
             'price' => 'required|numeric|min:0',
             'inventory_location_id' => 'nullable|exists:inventory_locations,id',
             'job_id' => 'nullable|exists:service_jobs,id'
@@ -46,21 +53,37 @@ class InventoryController extends Controller
         $jobId = $validated['job_id'] ?? null;
         unset($validated['job_id']); // Not in inventories table
         
-        $inventory = Inventory::create($validated);
+        return DB::transaction(function () use ($validated, $jobId) {
+            $inventory = Inventory::create($validated);
 
-        if ($jobId) {
-            \App\Models\JobItem::create([
-                'job_id' => $jobId,
-                'item_type' => 'part',
-                'description' => $validated['item_name'],
-                'quantity' => $validated['quantity'],
-                'price' => $validated['price'],
-                'cost_price' => $validated['price'], // Roughly
-                'inventory_location_id' => $validated['inventory_location_id']
-            ]);
-        }
+            if ($jobId) {
+                \App\Models\JobItem::create([
+                    'job_id' => $jobId,
+                    'item_type' => 'part',
+                    'inventory_id' => $inventory->id,
+                    'description' => $validated['item_name'],
+                    'quantity' => $validated['quantity'],
+                    'price' => $validated['price'],
+                    'cost_price' => $validated['price'],
+                    'inventory_location_id' => $validated['inventory_location_id']
+                ]);
 
-        return redirect()->back()->with('success', 'Item added to inventory.');
+                // Recalculate job and invoice totals
+                $job = \App\Models\Job::find($jobId);
+                if ($job) {
+                    $newSubTotal = $job->items()->sum(DB::raw('price * quantity'));
+                    $job->total_cost = $newSubTotal;
+                    $job->save();
+
+                    if ($job->invoice) {
+                        $job->invoice->total_amount = $newSubTotal;
+                        $job->invoice->save();
+                    }
+                }
+            }
+
+            return redirect()->back()->with('success', 'Item added to inventory.');
+        });
     }
 
     public function update(Request $request, string $id)
@@ -71,12 +94,14 @@ class InventoryController extends Controller
         $validated = $request->validate([
             'item_name' => 'required|string|max:255',
             'sku' => 'nullable|string|max:255',
-            'quantity' => 'required|integer|min:0',
+            'quantity' => 'required|numeric|min:0',
             'price' => 'required|numeric|min:0',
         ]);
 
-        $inventory->update($validated);
-        return redirect()->back()->with('success', 'Item updated successfully.');
+        return DB::transaction(function () use ($inventory, $validated) {
+            $inventory->update($validated);
+            return redirect()->back()->with('success', 'Item updated successfully.');
+        });
     }
 
     public function destroy(string $id)

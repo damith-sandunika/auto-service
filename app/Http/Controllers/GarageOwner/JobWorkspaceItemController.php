@@ -76,19 +76,25 @@ class JobWorkspaceItemController extends Controller
                 }
             }
 
-            // If it's a part, decrement inventory
+            // If it's a part, decrement inventory atomically with guard against negative stock
+            $inventoryId = null;
             if ($request->item_type === 'part' && $request->item_id) {
-                $inv = Inventory::find($request->item_id);
-                if ($inv && $inv->quantity >= $request->quantity) {
-                    $inv->decrement('quantity', $request->quantity);
-                } else {
-                    throw new \Exception("Not enough inventory for this part.");
+                $affected = Inventory::where('id', $request->item_id)
+                    ->where('garage_id', $job->garage_id)
+                    ->where('quantity', '>=', $request->quantity)
+                    ->decrement('quantity', $request->quantity);
+
+                if ($affected === 0) {
+                    $available = Inventory::where('id', $request->item_id)->value('quantity') ?? 0;
+                    throw new \Exception("Insufficient inventory for this part. Requested: {$request->quantity}, Available: {$available}");
                 }
+                $inventoryId = $request->item_id;
             }
 
             JobItem::create([
                 'job_id' => $job->id,
                 'item_type' => $request->item_type,
+                'inventory_id' => $inventoryId,
                 'description' => $request->description,
                 'quantity' => $request->quantity,
                 'price' => $request->price,
@@ -149,11 +155,17 @@ class JobWorkspaceItemController extends Controller
 
         DB::beginTransaction();
         try {
-            // Restore inventory if part
+            // Restore inventory if part (exact match by inventory_id, falling back to name for legacy rows)
             if ($item->item_type === 'part') {
-                $inv = Inventory::where('garage_id', $job->garage_id)
-                    ->where('item_name', $item->description)
-                    ->first();
+                $inv = null;
+                if (!empty($item->inventory_id)) {
+                    $inv = Inventory::where('id', $item->inventory_id)->where('garage_id', $job->garage_id)->first();
+                }
+                if (!$inv) {
+                    $inv = Inventory::where('garage_id', $job->garage_id)
+                        ->where('item_name', $item->description)
+                        ->first();
+                }
                 if ($inv) {
                     $inv->increment('quantity', $item->quantity);
                 }
@@ -252,13 +264,28 @@ class JobWorkspaceItemController extends Controller
             }
 
             if ($item->item_type === 'part') {
-                $inv = Inventory::where('garage_id', $job->garage_id)->where('item_name', $item->description)->first();
+                $inv = null;
+                if (!empty($item->inventory_id)) {
+                    $inv = Inventory::where('id', $item->inventory_id)->where('garage_id', $job->garage_id)->first();
+                }
+                if (!$inv) {
+                    $inv = Inventory::where('garage_id', $job->garage_id)->where('item_name', $item->description)->first();
+                }
+
                 if ($inv) {
                     $diff = $newQty - $oldQty;
-                    if ($diff > 0 && $inv->quantity < $diff) {
-                        throw new \Exception("Not enough inventory.");
+                    if ($diff > 0) {
+                        $affected = Inventory::where('id', $inv->id)
+                            ->where('quantity', '>=', $diff)
+                            ->decrement('quantity', $diff);
+
+                        if ($affected === 0) {
+                            $available = $inv->fresh()->quantity ?? 0;
+                            throw new \Exception("Insufficient inventory to increase quantity by {$diff}. Available: {$available}");
+                        }
+                    } elseif ($diff < 0) {
+                        $inv->increment('quantity', abs($diff));
                     }
-                    $inv->decrement('quantity', $diff);
                 }
             }
             

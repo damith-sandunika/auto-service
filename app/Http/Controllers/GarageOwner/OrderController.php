@@ -9,6 +9,7 @@ use Inertia\Inertia;
 use App\Models\Invoice;
 use App\Models\Job;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Traits\JobAccessTrait;
 
 class OrderController extends Controller
@@ -27,13 +28,17 @@ class OrderController extends Controller
             ->when($garageId, function($q) use ($garageId) {
                 return $q->where('garage_id', $garageId);
             })
-            ->orderBy('id', 'desc')->paginate(20, ['*'], 'invoices_page');
+            ->orderBy('id', 'desc')
+            ->paginate(20, ['*'], 'invoices_page')
+            ->withQueryString();
             
         $jobs = Job::with('vehicle')
             ->when($garageId, function($q) use ($garageId) {
                 return $q->where('garage_id', $garageId);
             })
-            ->orderBy('id', 'desc')->paginate(20, ['*'], 'jobs_page');
+            ->orderBy('id', 'desc')
+            ->paginate(20, ['*'], 'jobs_page')
+            ->withQueryString();
 
         $branches = [];
         if ($user->role === 'company_owner') {
@@ -44,15 +49,21 @@ class OrderController extends Controller
                 return $q->where('garage_id', $garageId);
             })
             ->orderBy('id', 'desc')
-            ->take(50) // Only fetch recent 50 to avoid huge payload, as we merge in UI
-            ->get();
+            ->paginate(20, ['*'], 'deleted_page')
+            ->withQueryString();
+
+        $activeCount = Invoice::when($garageId, fn($q) => $q->where('garage_id', $garageId))->count();
+        $deletedCount = \App\Models\DeletedOrder::when($garageId, fn($q) => $q->where('garage_id', $garageId))->count();
 
         return Inertia::render('GarageOwner/Orders', [
             'invoices' => $invoices,
             'jobs' => $jobs,
             'branches' => $branches,
             'selectedBranchId' => $garageId,
-            'deletedOrders' => $deletedOrders
+            'deletedOrders' => $deletedOrders,
+            'activeCount' => $activeCount,
+            'deletedCount' => $deletedCount,
+            'currentTab' => $request->query('tab', 'active'),
         ]);
     }
 
@@ -122,24 +133,26 @@ class OrderController extends Controller
 
     public function destroy(string $id)
     {
-        $invoice = Invoice::with(['job.vehicle', 'job.owner'])->findOrFail($id);
-        $this->checkGarageAccess($invoice->garage_id);
-        $customerName = $invoice->job?->owner?->name ?? $invoice->job?->vehicle?->owner?->name ?? 'Walk-in Customer';
-        $vehicleNumber = $invoice->job?->vehicle?->license_plate ?? $invoice->job?->vehicle?->vehicle_number ?? 'Unknown';
-        
-        \App\Models\DeletedOrder::create([
-            'garage_id' => $invoice->garage_id,
-            'invoice_number' => $invoice->invoice_number ?? $invoice->id,
-            'customer_name' => $customerName,
-            'vehicle_number' => $vehicleNumber,
-            'total_amount' => $invoice->total_amount,
-            'deleted_by' => Auth::id(),
-            'deleted_by_name' => Auth::user()->name,
-        ]);
+        return DB::transaction(function () use ($id) {
+            $invoice = Invoice::with(['job.vehicle', 'job.owner'])->findOrFail($id);
+            $this->checkGarageAccess($invoice->garage_id);
+            $customerName = $invoice->job?->owner?->name ?? $invoice->job?->vehicle?->owner?->name ?? 'Walk-in Customer';
+            $vehicleNumber = $invoice->job?->vehicle?->license_plate ?? $invoice->job?->vehicle?->vehicle_number ?? 'Unknown';
+            
+            \App\Models\DeletedOrder::create([
+                'garage_id' => $invoice->garage_id,
+                'invoice_number' => $invoice->invoice_number ?? $invoice->id,
+                'customer_name' => $customerName,
+                'vehicle_number' => $vehicleNumber,
+                'total_amount' => $invoice->total_amount,
+                'deleted_by' => Auth::id(),
+                'deleted_by_name' => Auth::user()->name,
+            ]);
 
-        $invoice->delete();
-        
-        return redirect()->back()->with('success', 'Order deleted successfully.');
+            $invoice->delete();
+            
+            return redirect()->back()->with('success', 'Order deleted successfully.');
+        });
     }
 
     public function addPayment(Request $request, string $id, \App\Actions\Orders\ProcessPaymentAction $processPaymentAction)
@@ -168,124 +181,182 @@ class OrderController extends Controller
 
     public function updatePayment(Request $request, string $invoiceId, string $paymentId)
     {
-        $invoice = Invoice::findOrFail($invoiceId);
-        $this->checkGarageAccess($invoice->garage_id);
+        return DB::transaction(function () use ($request, $invoiceId, $paymentId) {
+            $invoice = Invoice::findOrFail($invoiceId);
+            $this->checkGarageAccess($invoice->garage_id);
 
-        $payment = \App\Models\Payment::where('invoice_id', $invoice->id)->findOrFail($paymentId);
+            $payment = \App\Models\Payment::where('invoice_id', $invoice->id)->findOrFail($paymentId);
 
-        $validated = $request->validate([
-            'amount' => 'required|numeric|min:0',
-            'payment_method' => 'required|string|in:cash,card,bank_transfer,credit',
-            'payment_date' => 'nullable|date',
-        ]);
+            $validated = $request->validate([
+                'amount' => 'required|numeric|min:0',
+                'payment_method' => 'required|string|in:cash,card,bank_transfer,credit',
+                'payment_date' => 'nullable|date',
+            ]);
 
-        $oldAmount = $payment->amount;
-        $oldMethod = $payment->payment_method;
+            $oldAmount = $payment->amount;
+            $oldMethod = $payment->payment_method;
 
-        $payment->update([
-            'amount' => $validated['amount'],
-            'payment_method' => $validated['payment_method'],
-            'payment_date' => $validated['payment_date'] ?? $payment->payment_date,
-        ]);
+            $payment->update([
+                'amount' => $validated['amount'],
+                'payment_method' => $validated['payment_method'],
+                'payment_date' => $validated['payment_date'] ?? $payment->payment_date,
+            ]);
 
-        // Update invoice status
-        $totalPaid = \App\Models\Payment::where('invoice_id', $invoice->id)->sum('amount');
-        $status = $totalPaid >= $invoice->total_amount ? 'paid' : 'pending';
-        $invoice->update(['status' => $status]);
+            // Update invoice status
+            $totalPaid = \App\Models\Payment::where('invoice_id', $invoice->id)->sum('amount');
+            $status = $totalPaid >= $invoice->total_amount ? 'paid' : 'pending';
+            $invoice->update(['status' => $status]);
 
-        if (\Illuminate\Support\Facades\Schema::hasTable('job_timelines')) {
-            $changes = [];
-            if ($oldAmount != $validated['amount']) $changes[] = "Amount changed from Rs. {$oldAmount} to Rs. {$validated['amount']}";
-            if ($oldMethod != $validated['payment_method']) $changes[] = "Method changed from " . strtoupper($oldMethod) . " to " . strtoupper($validated['payment_method']);
-            
-            if (count($changes) > 0) {
-                \App\Models\JobTimeline::create([
-                    'garage_id' => $invoice->garage_id,
-                    'job_id' => $invoice->job_id,
-                    'user_id' => Auth::id(),
-                    'action' => 'correction',
-                    'description' => "Payment corrected: " . implode(', ', $changes),
-                ]);
+            if (\Illuminate\Support\Facades\Schema::hasTable('job_timelines')) {
+                $changes = [];
+                if ($oldAmount != $validated['amount']) $changes[] = "Amount changed from Rs. {$oldAmount} to Rs. {$validated['amount']}";
+                if ($oldMethod != $validated['payment_method']) $changes[] = "Method changed from " . strtoupper($oldMethod) . " to " . strtoupper($validated['payment_method']);
+                
+                if (count($changes) > 0) {
+                    \App\Models\JobTimeline::create([
+                        'garage_id' => $invoice->garage_id,
+                        'job_id' => $invoice->job_id,
+                        'user_id' => Auth::id(),
+                        'action' => 'correction',
+                        'description' => "Payment corrected: " . implode(', ', $changes),
+                    ]);
+                }
             }
-        }
 
-        return redirect()->back()->with('success', 'Payment corrected successfully.');
+            return redirect()->back()->with('success', 'Payment corrected successfully.');
+        });
     }
 
     public function updateItem(Request $request, string $invoiceId, string $itemId)
     {
-        $invoice = Invoice::findOrFail($invoiceId);
-        $this->checkGarageAccess($invoice->garage_id);
+        return DB::transaction(function () use ($request, $invoiceId, $itemId) {
+            $invoice = Invoice::findOrFail($invoiceId);
+            $this->checkGarageAccess($invoice->garage_id);
 
-        $item = \App\Models\JobItem::where('job_id', $invoice->job_id)->findOrFail($itemId);
+            $item = \App\Models\JobItem::where('job_id', $invoice->job_id)->findOrFail($itemId);
 
-        $validated = $request->validate([
-            'description' => 'required|string',
-            'quantity' => 'required|integer|min:1',
-            'price' => 'required|numeric|min:0',
-        ]);
+            $validated = $request->validate([
+                'description' => 'required|string',
+                'quantity' => 'required|numeric|min:0.01',
+                'price' => 'required|numeric|min:0',
+            ]);
 
-        $oldDesc = $item->description;
-        $oldQty = $item->quantity;
-        $oldPrice = $item->price;
+            $oldDesc = $item->description;
+            $oldQty = (float)$item->quantity;
+            $oldPrice = (float)$item->price;
+            $newQty = (float)$validated['quantity'];
 
-        $item->update([
-            'description' => $validated['description'],
-            'quantity' => $validated['quantity'],
-            'price' => $validated['price'],
-        ]);
+            // Stock adjustment if item is an inventory part
+            if ($item->item_type === 'part' && !empty($item->inventory_id)) {
+                $inv = \App\Models\Inventory::where('id', $item->inventory_id)
+                    ->where('garage_id', $invoice->garage_id)
+                    ->lockForUpdate()
+                    ->first();
 
-        // Recalculate invoice total
-        $newTotal = \App\Models\JobItem::where('job_id', $invoice->job_id)->sum(\Illuminate\Support\Facades\DB::raw('price * quantity'));
-        $invoice->update(['total_amount' => $newTotal]);
-        $this->updateInvoiceStatus($invoice);
+                if ($inv) {
+                    $qtyDelta = $newQty - $oldQty;
+                    if ($qtyDelta > 0) {
+                        // Consumed more items: ensure available
+                        if ($inv->quantity < $qtyDelta) {
+                            return back()->withErrors(['quantity' => "Insufficient stock. Only {$inv->quantity} available in inventory."]);
+                        }
+                        $inv->decrement('quantity', $qtyDelta);
+                    } elseif ($qtyDelta < 0) {
+                        // Reduced quantity: restore stock
+                        $inv->increment('quantity', abs($qtyDelta));
+                    }
+                }
+            }
 
-        if (\Illuminate\Support\Facades\Schema::hasTable('job_timelines')) {
-            $changes = [];
-            if ($oldDesc != $validated['description']) $changes[] = "Name changed to '{$validated['description']}'";
-            if ($oldQty != $validated['quantity']) $changes[] = "Qty changed to {$validated['quantity']}";
-            if ($oldPrice != $validated['price']) $changes[] = "Price changed to {$validated['price']}";
+            $item->update([
+                'description' => $validated['description'],
+                'quantity' => $validated['quantity'],
+                'price' => $validated['price'],
+            ]);
+
+            // Recalculate invoice & job total
+            $newTotal = \App\Models\JobItem::where('job_id', $invoice->job_id)->sum(\Illuminate\Support\Facades\DB::raw('price * quantity'));
+            $invoice->update(['total_amount' => $newTotal]);
+            $invoice->job()->update(['total_cost' => $newTotal]);
+            $this->updateInvoiceStatus($invoice);
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('job_timelines')) {
+                $changes = [];
+                if ($oldDesc != $validated['description']) $changes[] = "Name changed to '{$validated['description']}'";
+                if ($oldQty != $newQty) $changes[] = "Qty changed from {$oldQty} to {$newQty}";
+                if ($oldPrice != (float)$validated['price']) $changes[] = "Price changed from {$oldPrice} to {$validated['price']}";
+                
+                if (count($changes) > 0) {
+                    \App\Models\JobTimeline::create([
+                        'garage_id' => $invoice->garage_id,
+                        'job_id' => $invoice->job_id,
+                        'user_id' => Auth::id(),
+                        'action' => 'correction',
+                        'description' => "Item '{$oldDesc}' edited: " . implode(', ', $changes),
+                    ]);
+                }
+            }
+
+            return redirect()->back()->with('success', 'Item updated successfully.');
+        });
+    }
+
+    public function deleteItem(string $invoiceId, string $itemId)
+    {
+        return DB::transaction(function () use ($invoiceId, $itemId) {
+            $invoice = Invoice::findOrFail($invoiceId);
+            $this->checkGarageAccess($invoice->garage_id);
+
+            $item = \App\Models\JobItem::where('job_id', $invoice->job_id)->findOrFail($itemId);
+            $oldDesc = $item->description;
+
+            // Restore stock if inventory part
+            if ($item->item_type === 'part' && !empty($item->inventory_id)) {
+                $inv = \App\Models\Inventory::where('id', $item->inventory_id)
+                    ->where('garage_id', $invoice->garage_id)
+                    ->lockForUpdate()
+                    ->first();
+                if ($inv) {
+                    $inv->increment('quantity', $item->quantity);
+                }
+            }
             
-            if (count($changes) > 0) {
+            $item->delete();
+
+            // Recalculate invoice & job total
+            $newTotal = \App\Models\JobItem::where('job_id', $invoice->job_id)->sum(\Illuminate\Support\Facades\DB::raw('price * quantity'));
+            $invoice->update(['total_amount' => $newTotal]);
+            $invoice->job()->update(['total_cost' => $newTotal]);
+            $this->updateInvoiceStatus($invoice);
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('job_timelines')) {
                 \App\Models\JobTimeline::create([
                     'garage_id' => $invoice->garage_id,
                     'job_id' => $invoice->job_id,
                     'user_id' => Auth::id(),
                     'action' => 'correction',
-                    'description' => "Item '{$oldDesc}' edited: " . implode(', ', $changes),
+                    'description' => "Item '{$oldDesc}' removed from order.",
                 ]);
             }
-        }
 
-        return redirect()->back()->with('success', 'Item updated successfully.');
+            return redirect()->back()->with('success', 'Item removed successfully.');
+        });
     }
 
-    public function deleteItem(string $invoiceId, string $itemId)
+    protected function updateInvoiceStatus(Invoice $invoice)
     {
-        $invoice = Invoice::findOrFail($invoiceId);
-        $this->checkGarageAccess($invoice->garage_id);
+        $totalPaid = (float)\App\Models\Payment::where('invoice_id', $invoice->id)->sum('amount');
+        $totalAmount = (float)$invoice->total_amount;
 
-        $item = \App\Models\JobItem::where('job_id', $invoice->job_id)->findOrFail($itemId);
-        $oldDesc = $item->description;
-        
-        $item->delete();
-
-        // Recalculate invoice total
-        $newTotal = \App\Models\JobItem::where('job_id', $invoice->job_id)->sum(\Illuminate\Support\Facades\DB::raw('price * quantity'));
-        $invoice->update(['total_amount' => $newTotal]);
-        $this->updateInvoiceStatus($invoice);
-
-        if (\Illuminate\Support\Facades\Schema::hasTable('job_timelines')) {
-            \App\Models\JobTimeline::create([
-                'garage_id' => $invoice->garage_id,
-                'job_id' => $invoice->job_id,
-                'user_id' => Auth::id(),
-                'action' => 'correction',
-                'description' => "Item '{$oldDesc}' removed from order.",
-            ]);
+        if ($totalPaid >= $totalAmount && $totalAmount > 0) {
+            $status = 'paid';
+        } elseif ($totalPaid > 0) {
+            $status = 'partial';
+        } else {
+            $status = 'pending';
         }
 
-        return redirect()->back()->with('success', 'Item removed successfully.');
+        $invoice->update(['status' => $status]);
     }
 
     public function print(Request $request, string $id)

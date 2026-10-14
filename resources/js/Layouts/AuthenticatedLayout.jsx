@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
 import Sidebar from './Partials/Sidebar';
 import Topbar from './Partials/Topbar';
+import NetworkStatusBanner from '@/Components/NetworkStatusBanner';
 
 export default function AuthenticatedLayout({ header, headerActions, children, fullWidth = false }) {
     const user = usePage().props.auth.user;
@@ -203,6 +204,8 @@ export default function AuthenticatedLayout({ header, headerActions, children, f
                     setNotifOpen={setNotifOpen} 
                     alerts={alerts} 
                 />
+
+                <NetworkStatusBanner />
 
                 <main className={`flex-1 overflow-y-auto ${fullWidth ? 'p-0' : 'p-4 md:p-6 lg:p-8'} relative z-10 scrollbar-hide animate-fade-in-up`}>
                     {(header || headerActions) && (

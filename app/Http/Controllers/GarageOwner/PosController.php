@@ -104,8 +104,9 @@ class PosController extends Controller
 
         $garageId = $this->getGarageId($request);
 
+        $centralConn = config('tenancy.database.central_connection', 'mysql');
         $request->validate([
-            'vehicle_id' => 'nullable|exists:mysql.vehicles,id',
+            'vehicle_id' => "nullable|exists:{$centralConn}.vehicles,id",
             'new_vehicle_number' => 'required_without:vehicle_id|nullable|string|max:255',
             'new_vehicle_make' => 'nullable|string',
             'new_vehicle_model' => 'nullable|string',
@@ -123,12 +124,14 @@ class PosController extends Controller
             // Handle Customer
             $customerId = $request->customer_id;
             if (!$customerId && $request->new_customer_name) {
+                $cleanName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $request->new_customer_name)) ?: 'customer';
+                $uniqueEmail = $cleanName . '_' . time() . '_' . rand(1000, 9999) . '@garage.local';
                 $customer = User::create([
                     'garage_id' => $garageId,
                     'name' => $request->new_customer_name,
-                    'email' => strtolower(str_replace(' ', '', $request->new_customer_name)) . rand(100,999) . '@garage.local',
+                    'email' => $uniqueEmail,
                     'phone' => $request->new_customer_phone,
-                    'password' => bcrypt('password'),
+                    'password' => bcrypt(\Illuminate\Support\Str::random(16)),
                     'role' => 'vehicle_owner'
                 ]);
                 $customerId = $customer->id;

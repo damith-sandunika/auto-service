@@ -32,9 +32,21 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $exceptions->render(function (\Throwable $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
+                $incidentId = \Illuminate\Support\Str::uuid()->toString();
+                \Illuminate\Support\Facades\Log::error("Unhandled Exception [{$incidentId}]: " . $e->getMessage(), [
+                    'exception' => $e,
+                    'url' => $request->fullUrl(),
+                    'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                ]);
+
+                $message = config('app.debug') 
+                    ? $e->getMessage() 
+                    : 'A server error occurred. Please contact support with incident reference: ' . $incidentId;
+
                 return response()->json([
                     'error' => true,
-                    'message' => $e->getMessage(),
+                    'message' => $message,
+                    'incident_id' => $incidentId,
                 ], 500);
             }
         });

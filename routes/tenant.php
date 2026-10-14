@@ -22,23 +22,32 @@ Route::middleware([
         ]);
     });
 
-    // Serve Tenant Storage Files
+    // Serve Tenant Storage Files safely
     Route::get('/tenant-media/{path}', function ($path) {
-        $fullPath = storage_path("app/public/{$path}");
-        if (!file_exists($fullPath)) {
+        $baseDir = realpath(storage_path('app/public'));
+        if (!$baseDir) {
             abort(404);
         }
+
+        $cleanRelativePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+        $fullPath = realpath($baseDir . DIRECTORY_SEPARATOR . $cleanRelativePath);
+
+        // Disallow path traversal outside app/public
+        if (!$fullPath || !str_starts_with($fullPath, $baseDir) || !is_file($fullPath)) {
+            abort(404);
+        }
+
         return response()->file($fullPath);
-    })->where('path', '.*');
+    })->where('path', '[a-zA-Z0-9_\-\./]+');
 
     // Tenant Auth Routes (Prefix: tenant.)
     Route::name('tenant.')->group(function () {
         Route::get('login', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'create'])->name('login');
-        Route::post('login', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'store']);
+        Route::post('login', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'store'])->middleware('throttle:6,1');
         Route::post('logout', [\App\Http\Controllers\Auth\AuthenticatedSessionController::class, 'destroy'])->name('logout');
     });
 
-    Route::middleware('auth')->group(function () {
+    Route::middleware(['auth', 'throttle:180,1'])->group(function () {
         Route::get('/dashboard', function (Request $request) {
             $role = $request->user()->role;
             if ($role === 'company_owner') {

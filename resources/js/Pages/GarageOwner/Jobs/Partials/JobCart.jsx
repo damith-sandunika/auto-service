@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { router, Link } from '@inertiajs/react';
 import JobDiscountModal from './JobDiscountModal';
 import JobItemModals from './JobItemModals';
+import SafeButton from '@/Components/SafeButton';
 
 export default function JobCart({ job, inventory, services, suppliers, subTotal, discount }) {
     const [isAddPartOpen, setIsAddPartOpen] = useState(false);
     const [isAddServiceOpen, setIsAddServiceOpen] = useState(false);
     const [isAddOutsourceOpen, setIsAddOutsourceOpen] = useState(false);
+    const qtyLockRef = useRef(false);
 
     const updateQuantityAction = (item, action, value = null) => {
-        router.patch(route('owner.jobs.items.quantity', item.id), { action, quantity: value }, { preserveScroll: true });
+        if (qtyLockRef.current) return;
+        qtyLockRef.current = true;
+        router.patch(route('owner.jobs.items.quantity', item.id), { action, quantity: value }, { 
+            preserveScroll: true,
+            onFinish: () => { setTimeout(() => { qtyLockRef.current = false; }, 250); }
+        });
     };
 
     const handleQuantityChange = (item, e) => {
@@ -94,9 +101,13 @@ export default function JobCart({ job, inventory, services, suppliers, subTotal,
                             Return to Order
                         </Link>
                     ) : (
-                        <Link href={route('owner.jobs.complete', job.id)} method="post" as="button" className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 shadow-md shadow-blue-500/20 text-center transition-all block">
+                        <SafeButton 
+                            onClick={() => router.post(route('owner.jobs.complete', job.id))} 
+                            className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 shadow-md shadow-blue-500/20 text-center text-sm"
+                            loadingText="Completing Order..."
+                        >
                             Complete &amp; Generate Order
-                        </Link>
+                        </SafeButton>
                     )}
                 </div>
             </div>

@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
+use App\Traits\BelongsToGarage;
 
 class InventoryLocation extends Model
 {
-    use BelongsToTenant;
+    use BelongsToGarage;
 
     protected $fillable = [
         'garage_id',

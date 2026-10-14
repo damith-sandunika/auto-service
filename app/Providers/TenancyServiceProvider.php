@@ -70,11 +70,17 @@ class TenancyServiceProvider extends ServiceProvider
             Events\InitializingTenancy::class => [],
             Events\TenancyInitialized::class => [
                 Listeners\BootstrapTenancy::class,
+                function (Events\TenancyInitialized $event) {
+                    config(['cache.prefix' => 'tenant_' . $event->tenancy->tenant->getTenantKey() . '_']);
+                },
             ],
 
             Events\EndingTenancy::class => [],
             Events\TenancyEnded::class => [
                 Listeners\RevertToCentralContext::class,
+                function () {
+                    config(['cache.prefix' => 'laravel_cache_']);
+                },
             ],
 
             Events\BootstrappingTenancy::class => [],

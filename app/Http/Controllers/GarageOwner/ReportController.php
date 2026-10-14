@@ -33,18 +33,16 @@ class ReportController extends Controller
         $startDate = $request->query('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->query('end_date', now()->endOfMonth()->toDateString());
 
-        // 1. Orders (Invoices) Stats (Use Aggregates instead of loading models)
-        $ordersStats = Invoice::whereHas('job', function($q) use ($garageIds) {
-                $q->whereIn('garage_id', $garageIds);
-            })
+        // 1. Orders (Invoices) Stats (Direct Index Scan on garage_id)
+        $ordersStats = Invoice::whereIn('garage_id', $garageIds)
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
             ->selectRaw('SUM(total_amount) as total_sales, COUNT(id) as total_count')
             ->first();
 
         $totalSales = $ordersStats->total_sales ?? 0;
         
-        // 2. Payments (Aggregates)
-        $paymentStats = Payment::whereHas('invoice.job', function($q) use ($garageIds) {
+        // 2. Payments (Aggregates using direct invoice relation)
+        $paymentStats = Payment::whereHas('invoice', function($q) use ($garageIds) {
                 $q->whereIn('garage_id', $garageIds);
             })
             ->where('payment_method', '!=', 'credit')
@@ -81,7 +79,7 @@ class ReportController extends Controller
 
         // 4. Paginated Lists for UI to avoid crashing browser
         $orders = Payment::with(['invoice.job.vehicle', 'invoice.job.owner', 'invoice.job.garage'])
-            ->whereHas('invoice.job', function($q) use ($garageIds) {
+            ->whereHas('invoice', function($q) use ($garageIds) {
                 $q->whereIn('garage_id', $garageIds);
             })
             ->where('payment_method', '!=', 'credit')
@@ -94,12 +92,9 @@ class ReportController extends Controller
             ->orderBy('expense_date', 'desc')
             ->paginate(15, ['*'], 'expenses_page')->withQueryString();
 
-        // 5. Credit Customers (Using DB query to find partial payments)
+        // 5. Credit Customers (Direct garage_id filter on invoices)
         $creditOrders = Invoice::with(['job.vehicle', 'job.owner', 'payments', 'job.garage'])
-            ->whereHas('job', function($q) use ($garageIds) {
-                $q->whereIn('garage_id', $garageIds);
-            })
-            // ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']) // Usually credit is overall, not just this month
+            ->whereIn('garage_id', $garageIds)
             ->whereRaw('total_amount > (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE payments.invoice_id = invoices.id AND payments.payment_method != "credit")')
             ->orderByDesc('created_at')
             ->paginate(15, ['*'], 'credit_page')->withQueryString();

@@ -5,7 +5,7 @@ import Modal from '@/Components/Modal';
 import OrdersTable from './Orders/OrdersTable';
 import OrderPaymentModal from './Orders/OrderPaymentModal';
 
-export default function Orders({ invoices, jobs, branches, selectedBranchId, deletedOrders }) {
+export default function Orders({ invoices, jobs, branches, selectedBranchId, deletedOrders, activeCount, deletedCount, currentTab }) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [deletingInvoice, setDeletingInvoice] = useState(null);
@@ -50,7 +50,15 @@ export default function Orders({ invoices, jobs, branches, selectedBranchId, del
         >
             <Head title="Orders" />
             <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6 space-y-6">
-                <OrdersTable invoices={invoices} deletedOrders={deletedOrders} onPay={openPay} onDelete={openDelete} />
+                <OrdersTable 
+                    invoices={invoices} 
+                    deletedOrders={deletedOrders} 
+                    activeCount={activeCount}
+                    deletedCount={deletedCount}
+                    currentTab={currentTab}
+                    onPay={openPay} 
+                    onDelete={openDelete} 
+                />
             </div>
 
             <OrderPaymentModal show={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} payingInvoice={payingInvoice} />

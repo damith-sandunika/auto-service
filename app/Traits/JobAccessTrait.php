@@ -19,7 +19,7 @@ trait JobAccessTrait
             $ownsGarage = \App\Models\Garage::where('id', $garageId)->where('owner_id', $user->id)->exists();
             if (!$ownsGarage) abort(403);
         } else {
-            if ($garageId !== $user->garage_id) abort(403);
+            if ((int)$garageId !== (int)$user->garage_id) abort(403);
         }
     }
 
