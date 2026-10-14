@@ -1,17 +1,35 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage, router } from '@inertiajs/react';
 import { useState } from 'react';
 import Modal from '@/Components/Modal';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
+import Pagination from '@/Components/Pagination';
 
-export default function Staff({ staff, garages }) {
+export default function Staff({ staff, garages, filters = {} }) {
     const { auth } = usePage().props;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [editingStaff, setEditingStaff] = useState(null);
     const [deletingStaff, setDeletingStaff] = useState(null);
+    const [searchTerm, setSearchTerm] = useState(filters?.search || '');
+    const [selectedBranch, setSelectedBranch] = useState(filters?.branch_id || '');
+
+    const staffList = staff?.data || (Array.isArray(staff) ? staff : []);
+    const totalCount = staff?.total ?? staffList.length;
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        router.get(route('owner.staff.index'), { search: searchTerm, branch_id: selectedBranch }, { preserveState: true, replace: true });
+    };
+
+    const handleClearSearch = () => {
+        setSearchTerm('');
+        setSelectedBranch('');
+        router.get(route('owner.staff.index'), {}, { preserveState: true, replace: true });
+    };
+
     const { data, setData, post, put, delete: destroy, processing, errors, reset, clearErrors } = useForm({ name: '', email: '', password: '', role: 'staff', garage_id: '' });
 
     const openCreate = () => { clearErrors(); reset(); setEditingStaff(null); setIsModalOpen(true); };
@@ -24,17 +42,72 @@ export default function Staff({ staff, garages }) {
 
     return (
         <AuthenticatedLayout
-            header={<div className="text-left w-full"><h2 className="text-xl font-black text-black">Staff Management</h2></div>}
+            header={
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+                    <div>
+                        <h2 className="text-xl font-black text-black">Staff Management</h2>
+                        <p className="text-xs font-semibold text-slate-500 mt-0.5">
+                            Total: <span className="text-blue-600 font-black">{totalCount}</span> Staff Members
+                            {staff?.current_page && (
+                                <span className="ml-2 text-slate-400">
+                                    • Page {staff.current_page} of {staff.last_page} (15 per page)
+                                </span>
+                            )}
+                        </p>
+                    </div>
+                </div>
+            }
             headerActions={<div className="w-full sm:w-auto flex justify-end"><button onClick={openCreate} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-extrabold transition-colors text-sm shadow-md shadow-blue-500/20 whitespace-nowrap"><span className="text-lg leading-none mb-0.5">+</span> Add New Staff</button></div>}
         >
             <Head title="Staff Members" />
             <div className="max-w-7xl mx-auto space-y-6">
+                {/* Search & Filter Bar */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <form onSubmit={handleSearch} className="flex flex-wrap items-center gap-2 w-full sm:max-w-xl">
+                        <div className="relative flex-1 min-w-[200px]">
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Search staff by name, email, phone..."
+                                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 font-medium"
+                            />
+                            <svg className="w-4 h-4 text-slate-400 absolute left-3 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                        {garages && garages.length > 1 && (
+                            <select
+                                value={selectedBranch}
+                                onChange={(e) => setSelectedBranch(e.target.value)}
+                                className="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium"
+                            >
+                                <option value="">All Branches</option>
+                                {garages.map(g => (
+                                    <option key={g.id} value={g.id}>{g.name}</option>
+                                ))}
+                            </select>
+                        )}
+                        <button type="submit" className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition-colors whitespace-nowrap">
+                            Search
+                        </button>
+                        {(filters?.search || filters?.branch_id) && (
+                            <button type="button" onClick={handleClearSearch} className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-colors whitespace-nowrap">
+                                Clear
+                            </button>
+                        )}
+                    </form>
+                    <div className="text-xs font-bold text-slate-500">
+                        Showing {staffList.length} of {totalCount} results
+                    </div>
+                </div>
+
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm text-slate-600">
                             <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider"><tr><th className="px-6 py-4">Name</th><th className="px-6 py-4">Role</th><th className="px-6 py-4">Branch</th><th className="px-6 py-4">Status</th><th className="px-6 py-4 text-right">Actions</th></tr></thead>
                             <tbody className="divide-y divide-slate-100">
-                                {staff?.length > 0 ? staff.map((s) => (
+                                {staffList?.length > 0 ? staffList.map((s) => (
                                     <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="px-6 py-4 font-medium text-slate-800 flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-black">{s.name.charAt(0)}</div>
@@ -49,11 +122,16 @@ export default function Staff({ staff, garages }) {
                                         </td>
                                     </tr>
                                 )) : (
-                                    <tr><td colSpan="4" className="px-6 py-8 text-center text-slate-500 font-medium">No staff members found.</td></tr>
+                                    <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500 font-medium">No staff members found matching your search.</td></tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
+                    {staff?.links && (
+                        <div className="p-4 border-t border-slate-100">
+                            <Pagination links={staff.links} />
+                        </div>
+                    )}
                 </div>
             </div>
 

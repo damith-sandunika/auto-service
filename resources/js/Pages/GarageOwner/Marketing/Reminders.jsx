@@ -1,13 +1,21 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { BellIcon, CheckCircleIcon, PhoneIcon } from '@heroicons/react/24/outline';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import Pagination from '@/Components/Pagination';
 
 dayjs.extend(relativeTime);
 
-export default function RemindersIndex({ reminders }) {
+export default function RemindersIndex({ reminders, filters = {} }) {
     const { put, processing } = useForm({});
+
+    const reminderList = reminders?.data || (Array.isArray(reminders) ? reminders : []);
+    const totalCount = reminders?.total ?? reminderList.length;
+
+    const handleFilterStatus = (status) => {
+        router.get(route('owner.reminders.index'), { status }, { preserveState: true, replace: true });
+    };
 
     const handleStatusChange = (reminder, status) => {
         put(route('owner.reminders.update', reminder.id), {
@@ -29,9 +37,34 @@ export default function RemindersIndex({ reminders }) {
         <AuthenticatedLayout 
             fullWidth={true}
             header={
-                <div className="text-left w-full">
-                    <h2 className="text-xl font-black text-black">Service Reminders</h2>
-                    <p className="text-xs font-bold text-blue-600 mt-1">Automatically generated reminders. Call these customers to increase repeat business.</p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+                    <div>
+                        <h2 className="text-xl font-black text-black">Service Reminders</h2>
+                        <p className="text-xs font-semibold text-slate-500 mt-0.5">
+                            Total: <span className="text-indigo-600 font-black">{totalCount}</span> Reminders
+                            {reminders?.current_page && (
+                                <span className="ml-2 text-slate-400">
+                                    • Page {reminders.current_page} of {reminders.last_page} (15 per page)
+                                </span>
+                            )}
+                        </p>
+                    </div>
+                    {/* Status Tabs */}
+                    <div className="flex items-center gap-2">
+                        {['', 'pending', 'notified', 'completed'].map((st) => (
+                            <button
+                                key={st}
+                                onClick={() => handleFilterStatus(st)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                                    (filters?.status || '') === st
+                                        ? 'bg-slate-900 text-white'
+                                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                                }`}
+                            >
+                                {st === '' ? 'All' : st.charAt(0).toUpperCase() + st.slice(1)}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             }
         >
@@ -52,14 +85,14 @@ export default function RemindersIndex({ reminders }) {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-slate-200">
-                                    {reminders.length === 0 ? (
+                                    {reminderList.length === 0 ? (
                                         <tr>
                                             <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
-                                                No service reminders found. Complete a POS checkout to auto-generate reminders.
+                                                No service reminders found matching criteria.
                                             </td>
                                         </tr>
                                     ) : (
-                                        reminders.map((reminder) => {
+                                        reminderList.map((reminder) => {
                                             const isOverdue = dayjs(reminder.due_date).isBefore(dayjs());
                                             
                                             return (
@@ -117,6 +150,11 @@ export default function RemindersIndex({ reminders }) {
                                 </tbody>
                             </table>
                         </div>
+                        {reminders?.links && (
+                            <div className="p-4 border-t border-slate-100">
+                                <Pagination links={reminders.links} />
+                            </div>
+                        )}
                     </div>
                 </div>
         </AuthenticatedLayout>

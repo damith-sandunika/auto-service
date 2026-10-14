@@ -15,23 +15,35 @@ class StaffController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
+        $query = User::whereIn('role', ['branch_admin', 'staff', 'accountant', 'hr_manager'])
+            ->with('garage');
+
         if ($user->role === 'company_owner') {
-            $staff = User::whereIn('role', ['branch_admin', 'staff', 'accountant', 'hr_manager'])
-                ->with('garage')
-                ->get();
-            $garages = \App\Models\Garage::all();
+            if ($request->filled('branch_id')) {
+                $query->where('garage_id', $request->branch_id);
+            }
+            $garages = \App\Models\Garage::all(['id', 'name']);
         } else {
             $garageId = $this->getGarageId($request);
-            $staff = User::where('garage_id', $garageId)
-                ->whereIn('role', ['branch_admin', 'staff', 'accountant', 'hr_manager'])
-                ->with('garage')
-                ->get();
-            $garages = \App\Models\Garage::where('id', $garageId)->get();
+            $query->where('garage_id', $garageId);
+            $garages = \App\Models\Garage::where('id', $garageId)->get(['id', 'name']);
         }
 
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $staff = $query->orderBy('id', 'desc')->paginate(15)->withQueryString();
+
         return Inertia::render('GarageOwner/Staff', [
-            'staff' => $staff,
-            'garages' => $garages
+            'staff'   => $staff,
+            'garages' => $garages,
+            'filters' => $request->only(['search', 'branch_id']),
         ]);
     }
 

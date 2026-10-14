@@ -17,13 +17,18 @@ class ServiceReminderController extends Controller
     {
         $garageId = $this->getGarageId($request);
 
-        $reminders = ServiceReminder::where('garage_id', $garageId)
-            ->with(['vehicle', 'owner']) // assuming vehicle belongsTo owner
-            ->orderBy('due_date', 'asc')
-            ->get();
+        $query = ServiceReminder::where('garage_id', $garageId)
+            ->with(['vehicle', 'owner']);
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $reminders = $query->orderBy('due_date', 'asc')->paginate(15)->withQueryString();
 
         return Inertia::render('GarageOwner/Marketing/Reminders', [
-            'reminders' => $reminders
+            'reminders' => $reminders,
+            'filters'   => $request->only('status'),
         ]);
     }
 
