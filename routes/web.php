@@ -52,7 +52,12 @@ foreach (config('tenancy.central_domains') as $domain) {
                 // Vehicle Master Data (Makes & Models Catalog)
                 Route::get('vehicle-master', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'index'])->name('vehicle-master.index');
                 Route::post('vehicle-master/makes', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'storeMake'])->name('vehicle-master.makes.store');
+                Route::put('vehicle-master/makes/{make}', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'updateMake'])->name('vehicle-master.makes.update');
+                Route::delete('vehicle-master/makes/{make}', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'destroyMake'])->name('vehicle-master.makes.destroy');
+                
                 Route::post('vehicle-master/models', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'storeModel'])->name('vehicle-master.models.store');
+                Route::put('vehicle-master/models/{model}', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'updateModel'])->name('vehicle-master.models.update');
+                Route::delete('vehicle-master/models/{model}', [\App\Http\Controllers\SuperAdmin\VehicleMasterController::class, 'destroyModel'])->name('vehicle-master.models.destroy');
             });
         });
 
