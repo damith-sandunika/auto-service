@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 
-export default function Sidebar({ user, activeGarage, sidebarOpen, setSidebarOpen, isCollapsed, setIsCollapsed, openDropdowns, setOpenDropdowns, navLinks }) {
+export default function Sidebar({ user, company, activeGarage, branches, hasBranches, sidebarOpen, setSidebarOpen, isCollapsed, setIsCollapsed, openDropdowns, setOpenDropdowns, navLinks }) {
     return (
         <aside
             className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-white/80 backdrop-blur-xl border-r border-slate-200/60 transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'w-20' : 'w-64'}`}
@@ -10,12 +10,16 @@ export default function Sidebar({ user, activeGarage, sidebarOpen, setSidebarOpe
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
                 <div className={`w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-xl shadow-blue-500/20 mb-2 ring-2 ring-white transition-all duration-300 text-blue-600 ${!isCollapsed && 'w-16 h-16 rounded-[1.25rem] ring-4 mb-3'}`}>
-                    <img src={activeGarage?.logo_path ? `/tenant-media/${activeGarage.logo_path}` : (activeGarage?.logo_url || "/images/auto-service-logo.png")} alt="Auto Service" className={`${isCollapsed ? 'w-8 h-8' : 'w-10 h-10'} object-contain`} />
+                    <img src={company?.logo_url || activeGarage?.logo_path ? `/tenant-media/${activeGarage?.logo_path}` : (activeGarage?.logo_url || "/images/auto-service-logo.png")} alt={company?.name || "Auto Service"} className={`${isCollapsed ? 'w-8 h-8' : 'w-10 h-10'} object-contain`} />
                 </div>
                 {!isCollapsed && (
-                    <div className="animate-fade-in">
-                        <div className="text-lg font-black text-slate-900 tracking-tight leading-tight">{activeGarage?.name || "Auto Service"}</div>
-                        <div className="text-[9px] font-extrabold text-blue-600 uppercase tracking-widest mt-1">Management</div>
+                    <div className="animate-fade-in w-full px-2">
+                        <div className="text-base font-black text-slate-900 tracking-tight leading-tight truncate" title={company?.name || activeGarage?.name}>
+                            {company?.name || activeGarage?.name || "Auto Service"}
+                        </div>
+                        <div className="text-[9px] font-extrabold text-blue-600 uppercase tracking-widest mt-1 truncate">
+                            {company?.tagline || "Enterprise System"}
+                        </div>
                     </div>
                 )}
             </div>

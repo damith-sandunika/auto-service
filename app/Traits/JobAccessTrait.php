@@ -36,6 +36,8 @@ trait JobAccessTrait
                 $garageId = $request->query('branch_id');
             } else if ($request->has('garage_id')) {
                 $garageId = $request->input('garage_id');
+            } else if (session()->has('active_branch_id')) {
+                $garageId = session('active_branch_id');
             } else {
                 $garageId = \App\Models\Garage::where('owner_id', $user->id)->value('id');
             }

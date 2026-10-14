@@ -68,8 +68,16 @@ Route::middleware([
             Route::post('/owner-dashboard/staff/{userId}/mark-in', [\App\Http\Controllers\GarageOwner\DashboardController::class, 'markStaffIn'])->name('dashboard.staff.mark-in');
             Route::post('/owner-dashboard/staff/{userId}/mark-out', [\App\Http\Controllers\GarageOwner\DashboardController::class, 'markStaffOut'])->name('dashboard.staff.mark-out');
             
-            // Re-using the same controllers for now, they work perfectly fine in the tenant DB context
             Route::resource('branches', \App\Http\Controllers\GarageOwner\BranchController::class);
+            Route::post('branches/switch', function (Request $request) {
+                $request->validate(['branch_id' => 'required|exists:garages,id']);
+                if ($request->user()->role === 'company_owner') {
+                    $branch = \App\Models\Garage::where('id', $request->branch_id)->where('owner_id', $request->user()->id)->firstOrFail();
+                    session(['active_branch_id' => $branch->id]);
+                    return back()->with('success', "Active branch switched to {$branch->name}.");
+                }
+                return back();
+            })->name('branches.switch');
             Route::resource('staff', \App\Http\Controllers\GarageOwner\StaffController::class);
             Route::resource('inventory-locations', \App\Http\Controllers\GarageOwner\InventoryLocationController::class);
             Route::resource('inventory', \App\Http\Controllers\GarageOwner\InventoryController::class);

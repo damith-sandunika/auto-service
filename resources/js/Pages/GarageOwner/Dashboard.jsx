@@ -49,14 +49,20 @@ export default function Dashboard({ stats, charts, recentJobs, shift, mechanics,
 
             <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6">
                 {!garage ? (
-                    <div className="bg-white rounded-3xl p-12 text-center shadow-sm border border-slate-200">
-                        <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <BriefcaseIcon className="w-8 h-8" />
+                    <div className="bg-white rounded-3xl p-10 sm:p-14 text-center shadow-sm border border-slate-200/80 max-w-2xl mx-auto my-8 animate-fade-in">
+                        <div className="w-20 h-20 bg-gradient-to-tr from-blue-500 to-indigo-600 text-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-500/20 ring-8 ring-blue-50">
+                            <BriefcaseIcon className="w-10 h-10" />
                         </div>
-                        <h3 className="text-xl font-black text-slate-800 mb-2">No Branches Found</h3>
-                        <p className="text-slate-500 text-sm font-medium mb-6 max-w-md mx-auto">You have successfully registered your company! To get started, please navigate to the Branches menu on the sidebar to create and manage your branches.</p>
-                        <Link href={route('owner.branches.index')} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-colors">
-                            Manage Branches
+                        <h3 className="text-2xl font-black text-slate-900 mb-3 tracking-tight">You haven't added any branches yet</h3>
+                        <p className="text-slate-500 text-sm font-medium mb-8 max-w-md mx-auto leading-relaxed">
+                            Your company profile is active! To start managing jobs, POS terminals, inventory, and staff, set up your first workshop or garage branch.
+                        </p>
+                        <Link 
+                            href={route('owner.branches.index')} 
+                            className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-blue-600/25 transition-all hover:-translate-y-0.5 active:translate-y-0"
+                        >
+                            <span>Click here to add your first branch</span>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
                         </Link>
                     </div>
                 ) : !shift.active ? (

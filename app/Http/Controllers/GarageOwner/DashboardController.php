@@ -16,13 +16,21 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    private function getActiveGarage()
+    {
+        $selectedBranchId = session('active_branch_id');
+        return $selectedBranchId
+            ? \App\Models\Garage::where('id', $selectedBranchId)->where('owner_id', Auth::id())->first()
+            : \App\Models\Garage::where('owner_id', Auth::id())->first();
+    }
+
     public function index(\App\Actions\Dashboard\GetDashboardDataAction $action)
     {
-        $garage = \App\Models\Garage::where('owner_id', Auth::id())->first();
+        $garage = $this->getActiveGarage();
         
         if (!$garage) {
             // If no garage exists yet, return an empty dashboard state
-            // The owner should probably see a prompt to create a branch
+            // The owner will see a prompt to create a branch
             return Inertia::render('GarageOwner/Dashboard', [
                 'stats' => ['activeJobs' => 0, 'todayRevenue' => 0, 'availableStaff' => '0 / 0', 'completedJobsToday' => 0],
                 'charts' => ['revenue' => [], 'jobs' => []],
@@ -56,8 +64,8 @@ class DashboardController extends Controller
             'attendance.*.status' => 'required|in:present,absent,casual_leave,medical_leave,vacation_leave,half_day'
         ]);
 
-        $garage = \App\Models\Garage::where('owner_id', Auth::id())->first();
-        if (!$garage) return redirect()->back()->with('error', 'Garage not found.');
+        $garage = $this->getActiveGarage();
+        if (!$garage) return redirect()->back()->with('error', 'Active branch not found. Please create or select a branch first.');
 
         try {
             $manageShiftAction->openShift($validated, $garage);
@@ -69,8 +77,8 @@ class DashboardController extends Controller
 
     public function closeShift(Request $request, \App\Actions\Dashboard\ManageShiftAction $manageShiftAction)
     {
-        $garage = \App\Models\Garage::where('owner_id', Auth::id())->first();
-        if (!$garage) return redirect()->back()->with('error', 'Garage not found.');
+        $garage = $this->getActiveGarage();
+        if (!$garage) return redirect()->back()->with('error', 'Active branch not found.');
 
         try {
             $manageShiftAction->closeShift($garage);
@@ -82,7 +90,7 @@ class DashboardController extends Controller
 
     public function markStaffIn(Request $request, $userId)
     {
-        $garage = \App\Models\Garage::where('owner_id', Auth::id())->first();
+        $garage = $this->getActiveGarage();
         if (!$garage) return redirect()->back();
 
         \App\Models\StaffAttendance::updateOrCreate(
@@ -101,7 +109,7 @@ class DashboardController extends Controller
 
     public function markStaffOut(Request $request, $userId)
     {
-        $garage = \App\Models\Garage::where('owner_id', Auth::id())->first();
+        $garage = $this->getActiveGarage();
         if (!$garage) return redirect()->back();
 
         $att = \App\Models\StaffAttendance::where('user_id', $userId)

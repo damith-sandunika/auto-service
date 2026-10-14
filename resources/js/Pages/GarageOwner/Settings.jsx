@@ -3,16 +3,17 @@ import { Head, useForm, router, Link } from '@inertiajs/react';
 import { useState, useRef, useEffect } from 'react';
 import InputError from '@/Components/InputError';
 
-export default function Settings({ garage, auth }) {
+export default function Settings({ company, garage, auth }) {
+    const target = company || garage;
     const { data, setData, post, processing, errors } = useForm({
-        name: garage?.name || '',
-        address: garage?.address || '',
-        phone: garage?.phone || '',
-        tagline: garage?.tagline || '',
+        name: target?.name || '',
+        address: target?.address || '',
+        phone: target?.phone || '',
+        tagline: target?.tagline || '',
         logo: null
     });
 
-    const [previewUrl, setPreviewUrl] = useState(garage?.logo_path ? `/tenant-media/${garage.logo_path}` : null);
+    const [previewUrl, setPreviewUrl] = useState(target?.logo_path ? `/tenant-media/${target.logo_path}` : null);
     const [dragOver, setDragOver] = useState(false);
     const fileInputRef = useRef(null);
     const [fileName, setFileName] = useState('');
@@ -52,20 +53,20 @@ export default function Settings({ garage, auth }) {
             header={
                 <div className="flex justify-between items-center w-full">
                     <div>
-                        <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">System Settings</h1>
-                        <p className="text-xs md:text-sm font-bold text-blue-600 mt-1">Configure garage details and system preferences</p>
+                        <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Company Settings</h1>
+                        <p className="text-xs md:text-sm font-bold text-blue-600 mt-1">Configure corporate organization details, contact info, and branding</p>
                     </div>
                 </div>
             }
             headerActions={
                 <div className="w-full sm:w-auto flex justify-end">
                     <button type="button" onClick={submit} disabled={processing} className="px-5 py-2 bg-blue-600 text-white text-xs font-black rounded-lg hover:bg-blue-700 transition-colors shadow-sm shadow-blue-500/20 disabled:opacity-50 whitespace-nowrap">
-                        {processing ? 'Saving...' : 'Save Settings'}
+                        {processing ? 'Saving...' : 'Save Company Settings'}
                     </button>
                 </div>
             }
         >
-            <Head title="System Settings" />
+            <Head title="Company Settings" />
 
             <div className="w-full max-w-[1600px] mx-auto py-6 px-2 sm:px-4 lg:px-6">
 
@@ -75,21 +76,21 @@ export default function Settings({ garage, auth }) {
                             {/* Left Column: Text Inputs */}
                             <div className="flex-1 space-y-6">
                                 <div>
-                                    <label className="block text-xs font-black text-slate-700 uppercase mb-2">Garage / Business Name</label>
+                                    <label className="block text-xs font-black text-slate-700 uppercase mb-2">Company / Organization Name</label>
                                     <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} required className="w-full text-sm font-medium border-slate-300 rounded-xl focus:border-blue-500 focus:ring-blue-500 shadow-sm px-4 py-2.5" />
                                     <InputError message={errors.name} className="mt-1" />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-black text-slate-700 uppercase mb-2">Tagline (Optional)</label>
-                                    <input type="text" value={data.tagline} onChange={e => setData('tagline', e.target.value)} className="w-full text-sm font-medium border-slate-300 rounded-xl focus:border-blue-500 focus:ring-blue-500 shadow-sm px-4 py-2.5" placeholder="e.g. Your Trusted Partner" />
+                                    <label className="block text-xs font-black text-slate-700 uppercase mb-2">Company Tagline (Optional)</label>
+                                    <input type="text" value={data.tagline} onChange={e => setData('tagline', e.target.value)} className="w-full text-sm font-medium border-slate-300 rounded-xl focus:border-blue-500 focus:ring-blue-500 shadow-sm px-4 py-2.5" placeholder="e.g. Total Automobile Solutions" />
                                     <InputError message={errors.tagline} className="mt-1" />
                                 </div>
                             </div>
 
                             {/* Right Column: Logo Upload */}
                             <div className="w-full lg:w-1/3 xl:w-1/4 shrink-0">
-                                <label className="block text-xs font-black text-slate-700 uppercase mb-2">Garage System Logo</label>
+                                <label className="block text-xs font-black text-slate-700 uppercase mb-2">Company Corporate Logo</label>
                                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 h-[230px] flex flex-col">
                                     <div
                                         onDragOver={e => { e.preventDefault(); setDragOver(true); }}

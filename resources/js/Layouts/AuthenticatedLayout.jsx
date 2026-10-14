@@ -6,7 +6,10 @@ import NetworkStatusBanner from '@/Components/NetworkStatusBanner';
 
 export default function AuthenticatedLayout({ header, headerActions, children, fullWidth = false }) {
     const user = usePage().props.auth.user;
+    const company = usePage().props.company;
     const activeGarage = usePage().props.active_garage;
+    const branches = usePage().props.branches || [];
+    const hasBranches = usePage().props.has_branches;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
     
@@ -145,7 +148,7 @@ export default function AuthenticatedLayout({ header, headerActions, children, f
                         active: route().current('owner.settings.*') || route().current('owner.roles.*'), 
                         icon: <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
                         subItems: [
-                            ...(perms === 'all' ? [{ name: 'General Settings', href: route('owner.settings.index'), active: route().current('owner.settings.index') }] : []),
+                            ...(perms === 'all' ? [{ name: 'Company Settings', href: route('owner.settings.index'), active: route().current('owner.settings.index') }] : []),
                             ...(perms === 'all' ? [{ name: 'Invoice Format', href: route('owner.settings.invoice'), active: route().current('owner.settings.invoice') }] : []),
                             ...(perms === 'all' ? [{ name: 'Thermal Bill', href: route('owner.settings.thermal'), active: route().current('owner.settings.thermal') }] : []),
                             ...(hasPerm('roles') || perms === 'all' ? [{ name: 'Access & Roles', href: route('owner.roles.index'), active: route().current('owner.roles.*') }] : []),
@@ -184,7 +187,10 @@ export default function AuthenticatedLayout({ header, headerActions, children, f
 
             <Sidebar 
                 user={user} 
+                company={company}
                 activeGarage={activeGarage} 
+                branches={branches}
+                hasBranches={hasBranches}
                 sidebarOpen={sidebarOpen} 
                 setSidebarOpen={setSidebarOpen} 
                 isCollapsed={isCollapsed} 
@@ -197,7 +203,10 @@ export default function AuthenticatedLayout({ header, headerActions, children, f
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
                 <Topbar 
                     user={user} 
+                    company={company}
                     activeGarage={activeGarage} 
+                    branches={branches}
+                    hasBranches={hasBranches}
                     sidebarOpen={sidebarOpen} 
                     setSidebarOpen={setSidebarOpen} 
                     notifOpen={notifOpen} 

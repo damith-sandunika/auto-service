@@ -1,7 +1,13 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import Dropdown from '@/Components/Dropdown';
 
-export default function Topbar({ user, activeGarage, sidebarOpen, setSidebarOpen, notifOpen, setNotifOpen, alerts }) {
+export default function Topbar({ user, company, activeGarage, branches = [], hasBranches = false, sidebarOpen, setSidebarOpen, notifOpen, setNotifOpen, alerts }) {
+    const handleSwitchBranch = (branchId) => {
+        router.post(route('owner.branches.switch'), { branch_id: branchId }, { preserveScroll: true });
+    };
+
+    const companyName = company?.name || (user.role === 'super_admin' ? 'Super Admin Portal' : 'Auto Service');
+
     return (
         <header className="h-16 px-4 lg:px-8 bg-white/70 backdrop-blur-xl border-b border-slate-200/60 flex items-center justify-between sticky top-0 z-30 shadow-sm">
             <button
@@ -12,12 +18,57 @@ export default function Topbar({ user, activeGarage, sidebarOpen, setSidebarOpen
             </button>
 
             <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none lg:flex flex-col text-center lg:text-left pointer-events-none lg:pointer-events-auto">
-                <div className="flex items-center justify-center lg:justify-start gap-2">
-                    <div className="text-[14px] lg:text-[15px] font-bold text-slate-800 tracking-tight leading-none">
-                        {user.role === 'super_admin' ? 'Super Admin Portal' : (activeGarage?.name || 'Garage Branch')}
-                    </div>
+                <div className="flex items-center justify-center lg:justify-start gap-2.5">
+                    <span className="text-[14px] lg:text-[16px] font-black text-slate-900 tracking-tight leading-none truncate max-w-[200px] sm:max-w-xs md:max-w-md" title={companyName}>
+                        {companyName}
+                    </span>
+
+                    {/* Branch Indicator / Switcher for Company Owner */}
+                    {user?.role === 'company_owner' && branches.length > 1 ? (
+                        <div className="pointer-events-auto">
+                            <Dropdown>
+                                <Dropdown.Trigger>
+                                    <button type="button" className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-200/80 rounded-lg transition-colors shadow-sm">
+                                        <svg className="w-3.5 h-3.5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                                        <span className="max-w-[120px] truncate">{activeGarage?.name || 'Select Branch'}</span>
+                                        <svg className="w-3 h-3 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                                    </button>
+                                </Dropdown.Trigger>
+                                <Dropdown.Content align="left" width="56" contentClasses="py-1 bg-white ring-1 ring-slate-100 shadow-2xl rounded-xl">
+                                    <div className="px-3 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                        Switch Active Branch
+                                    </div>
+                                    {branches.map(b => (
+                                        <button
+                                            key={b.id}
+                                            type="button"
+                                            onClick={() => handleSwitchBranch(b.id)}
+                                            className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-indigo-50/70 transition-colors ${activeGarage?.id === b.id ? 'text-indigo-700 bg-indigo-50 font-black' : 'text-slate-700'}`}
+                                        >
+                                            <span className="truncate">{b.name}</span>
+                                            {activeGarage?.id === b.id && (
+                                                <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-100/60 px-1.5 py-0.5 rounded ml-2">Active</span>
+                                            )}
+                                        </button>
+                                    ))}
+                                    <div className="border-t border-slate-100 pt-1">
+                                        <Link href={route('owner.branches.index')} className="block px-3 py-1.5 text-[11px] font-bold text-blue-600 hover:text-blue-700 hover:bg-slate-50">
+                                            + Manage Branches
+                                        </Link>
+                                    </div>
+                                </Dropdown.Content>
+                            </Dropdown>
+                        </div>
+                    ) : activeGarage ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/60 rounded-md">
+                            <svg className="w-3 h-3 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                            <span className="max-w-[140px] truncate">{activeGarage.name}</span>
+                        </span>
+                    ) : null}
                 </div>
-                <div className="text-[9px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mt-1">Auto Service Management</div>
+                <div className="text-[9px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mt-1">
+                    {company?.tagline || 'Auto Service Enterprise Management'}
+                </div>
             </div>
 
             <div className="flex items-center gap-3 lg:gap-6 ml-auto">

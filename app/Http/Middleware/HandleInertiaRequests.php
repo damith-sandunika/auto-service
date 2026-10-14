@@ -31,14 +31,54 @@ class HandleInertiaRequests extends Middleware
     {
         $alerts = [];
         $activeGarage = null;
+        $branches = [];
+        $company = null;
+
+        // Resolve Company (Tenant Level)
+        if (function_exists('tenant') && tenant()) {
+            $tenant = tenant();
+            $companySetting = null;
+            try {
+                $companySetting = \App\Models\CompanySetting::first();
+            } catch (\Throwable $e) {}
+
+            $companyName = $companySetting?->name ?: ($tenant->company_name ?: $tenant->id);
+            $logoPath = $companySetting?->logo_path ?: ($tenant->logo_path ?? null);
+            $companyLogoUrl = $logoPath ? '/tenant-media/' . $logoPath : '/images/auto-service-logo.png';
+
+            $company = [
+                'id' => $tenant->id,
+                'name' => $companyName,
+                'tagline' => $companySetting?->tagline ?: ($tenant->tagline ?? ''),
+                'address' => $companySetting?->address ?: ($tenant->address ?? ''),
+                'phone' => $companySetting?->phone ?: ($tenant->phone ?? ''),
+                'logo_url' => $companyLogoUrl,
+            ];
+        }
+
         if ($request->user() && in_array($request->user()->role, ['company_owner', 'garage_owner', 'branch_admin', 'garage_staff'])) {
-            // For company_owner, they might have multiple branches, just pick the first one or the one they selected
-            $garageId = $request->user()->garage_id ?? \App\Models\Garage::where('owner_id', $request->user()->id)->value('id');
-            $garage = \App\Models\Garage::find($garageId);
+            $ownerId = $request->user()->role === 'company_owner' ? $request->user()->id : null;
+
+            if ($request->user()->role === 'company_owner') {
+                $branches = \App\Models\Garage::where('owner_id', $request->user()->id)->orderBy('name')->get(['id', 'name', 'address', 'phone']);
+            }
+
+            // Resolve Active Branch
+            $garageId = null;
+            if ($request->user()->role === 'company_owner') {
+                $garageId = session('active_branch_id') ?? ($branches->first()?->id);
+            } else {
+                $garageId = $request->user()->garage_id;
+            }
+
+            $garage = $garageId ? \App\Models\Garage::find($garageId) : null;
             if ($garage) {
                 $activeGarage = [
+                    'id' => $garage->id,
                     'name' => $garage->name,
-                    'logo_url' => $garage->logo_path ? '/tenant-media/' . $garage->logo_path : '/images/auto-service-logo.png',
+                    'address' => $garage->address,
+                    'phone' => $garage->phone,
+                    'logo_url' => $garage->logo_path ? '/tenant-media/' . $garage->logo_path : ($company['logo_url'] ?? '/images/auto-service-logo.png'),
                 ];
 
                 // Low Stock Alerts (Only if owner or admin)
@@ -49,7 +89,7 @@ class HandleInertiaRequests extends Middleware
                     foreach ($lowStockItems as $item) {
                         $alerts[] = [
                             'type' => 'error',
-                            'message' => "Low Stock Alert: {$item->item_name} has only {$item->quantity} left!"
+                            'message' => "Low Stock Alert ({$garage->name}): {$item->item_name} has only {$item->quantity} left!"
                         ];
                     }
 
@@ -64,7 +104,7 @@ class HandleInertiaRequests extends Middleware
                     foreach ($dueCheques as $cheque) {
                         $alerts[] = [
                             'type' => 'warning',
-                            'message' => "Cheque Due Today/Overdue: Rs. {$cheque->amount} for {$cheque->supplier->name} (Due: {$cheque->cheque_due_date})"
+                            'message' => "Cheque Due Today/Overdue ({$garage->name}): Rs. {$cheque->amount} for {$cheque->supplier->name} (Due: {$cheque->cheque_due_date})"
                         ];
                     }
                 }
@@ -95,6 +135,9 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'permissions' => $permissions,
             ],
+            'company' => $company,
+            'branches' => $branches,
+            'has_branches' => count($branches) > 0,
             'global_alerts' => $alerts,
             'active_garage' => $activeGarage,
         ];
