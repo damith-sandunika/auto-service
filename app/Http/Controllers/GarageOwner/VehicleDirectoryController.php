@@ -29,7 +29,7 @@ class VehicleDirectoryController extends Controller
         
         $vehicles = Vehicle::whereIn('id', $vehicleIds)
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(15);
 
         return Inertia::render('GarageOwner/Vehicles/Index', [
             'customers' => $customers,

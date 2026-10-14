@@ -64,7 +64,7 @@ export default function ServiceHistoryTab({ vehicle, history, filters }) {
                     </div>
                 )}
             </div>
-            {history.data.length > 0 && <div className="p-4 border-t border-slate-100 bg-slate-50/50"><Pagination links={history.links} /></div>}
+            {history?.data?.length > 0 && <div className="p-4 border-t border-slate-100 bg-slate-50/50"><Pagination paginator={history} /></div>}
         </div>
     );
 }

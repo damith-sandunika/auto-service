@@ -45,7 +45,7 @@ class PayrollController extends Controller
             ->withSum(['salaryAdvances' => function($q) {
                 $q->where('status', 'pending');
             }], 'amount')
-            ->paginate(20)
+            ->paginate(15)
             ->through(function ($mechanic) use ($month) {
                 $profile = $mechanic->staffProfile;
                 $savedPayroll = $mechanic->payrolls->first();

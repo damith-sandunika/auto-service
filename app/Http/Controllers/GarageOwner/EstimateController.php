@@ -25,7 +25,7 @@ class EstimateController extends Controller
         $estimates = Estimate::where('garage_id', $garageId)
             ->with(['customer', 'vehicle'])
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(15);
 
         return Inertia::render('GarageOwner/Estimates/Index', [
             'estimates' => $estimates,

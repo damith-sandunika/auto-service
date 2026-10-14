@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
+import Pagination from '@/Components/Pagination';
 
 export default function VehiclesIndex({ vehicles }) {
     
@@ -62,7 +63,11 @@ export default function VehiclesIndex({ vehicles }) {
                             </tbody>
                         </table>
                     </div>
-                    {/* Pagination can go here */}
+                    {vehicles?.links && (
+                        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+                            <Pagination paginator={vehicles} />
+                        </div>
+                    )}
                 </div>
             </div>
 

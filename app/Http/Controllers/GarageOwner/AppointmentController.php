@@ -22,7 +22,7 @@ class AppointmentController extends Controller
             ->with(['customer', 'vehicle'])
             ->orderBy('appointment_date', 'asc')
             ->orderBy('appointment_time', 'asc')
-            ->paginate(20);
+            ->paginate(15);
 
         // Fetch customers for the dropdown
         $customers = User::where('garage_id', $garageId)

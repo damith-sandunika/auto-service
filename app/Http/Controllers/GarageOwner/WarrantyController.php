@@ -21,7 +21,7 @@ class WarrantyController extends Controller
         $warranties = Warranty::where('garage_id', $garageId)
             ->with(['vehicle', 'customer'])
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(15);
             
         $customers = User::where('garage_id', $garageId)
             ->where('role', 'vehicle_owner')

@@ -12,7 +12,7 @@ class VehicleController extends Controller
     public function index()
     {
         // Fetch all vehicles across all branches globally
-        $vehicles = Vehicle::latest()->paginate(20);
+        $vehicles = Vehicle::latest()->paginate(15);
         
         return Inertia::render('SuperAdmin/Vehicles/Index', [
             'vehicles' => $vehicles

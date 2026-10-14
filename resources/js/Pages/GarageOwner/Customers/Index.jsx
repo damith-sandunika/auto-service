@@ -98,7 +98,7 @@ export default function Index({ customers, filters = {} }) {
                     </div>
                     {customers?.links && (
                         <div className="p-4 border-t border-slate-100">
-                            <Pagination links={customers.links} />
+                            <Pagination paginator={customers} />
                         </div>
                     )}
                 </div>

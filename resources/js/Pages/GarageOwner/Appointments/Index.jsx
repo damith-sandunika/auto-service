@@ -81,7 +81,7 @@ export default function AppointmentsIndex({ appointments }) {
                             </tbody>
                         </table>
                     </div>
-                    {appointments.links && <Pagination links={appointments.links} />}
+                    {appointments.links && <Pagination paginator={appointments} />}
                 </div>
             </div>
 

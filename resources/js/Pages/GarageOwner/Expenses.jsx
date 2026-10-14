@@ -79,7 +79,7 @@ export default function Expenses({ expenses }) {
                 </DataTable>
                 
                 {/* Pagination */}
-                {expenses?.links && <Pagination links={expenses.links} />}
+                {expenses?.links && <Pagination paginator={expenses} />}
             </div>
 
             <Modal show={isModalOpen} onClose={closeModal} maxWidth="md">

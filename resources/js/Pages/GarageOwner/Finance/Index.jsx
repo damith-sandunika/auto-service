@@ -186,7 +186,7 @@ export default function FinanceIndex({ bankAccounts, transactions, summary, filt
                     </div>
                     {transactions.links && (
                         <div className="p-4 border-t border-slate-100">
-                            <Pagination links={transactions.links} />
+                            <Pagination paginator={transactions} />
                         </div>
                     )}
                 </div>

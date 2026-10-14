@@ -42,7 +42,7 @@ export default function HRIndex({ staff, garages, roles }) {
                 <div className="bg-white overflow-hidden shadow-sm sm:rounded-2xl border border-slate-100">
                     <div className="p-6">
                         <StaffGrid staff={staff} onEditProfile={openProfileModal} onMarkAttendance={openAttendanceModal} />
-                        {staff.links && <Pagination links={staff.links} />}
+                        {staff.links && <Pagination paginator={staff} />}
                     </div>
                 </div>
             </div>

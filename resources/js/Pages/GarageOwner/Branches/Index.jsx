@@ -193,7 +193,7 @@ export default function BranchesIndex({ branches, filters = {} }) {
                     {/* Server-Side Pagination Links */}
                     {branches?.links && (
                         <div className="p-4 border-t border-slate-100">
-                            <Pagination links={branches.links} />
+                            <Pagination paginator={branches} />
                         </div>
                     )}
                 </div>

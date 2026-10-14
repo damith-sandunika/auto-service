@@ -120,7 +120,7 @@ export default function PayrollIndex({ staff, selectedMonth }) {
                                 No staff members found.
                             </div>
                         )}
-                        {staff.links && <Pagination links={staff.links} />}
+                        {staff.links && <Pagination paginator={staff} />}
                     </div>
                 </div>
         </AuthenticatedLayout>

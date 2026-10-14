@@ -150,7 +150,7 @@ export default function ReportTables({ activeReport, services, orders, expenses,
                         </tbody>
                     </table>
                 </div>
-                {orders?.links && <Pagination links={orders.links} />}
+                {orders?.links && <Pagination paginator={orders} />}
                 </>
             )}
 
@@ -166,7 +166,7 @@ export default function ReportTables({ activeReport, services, orders, expenses,
                         </tbody>
                     </table>
                 </div>
-                {expenses?.links && <Pagination links={expenses.links} />}
+                {expenses?.links && <Pagination paginator={expenses} />}
                 </>
             )}
 
@@ -221,7 +221,7 @@ export default function ReportTables({ activeReport, services, orders, expenses,
                         </tbody>
                     </table>
                 </div>
-                {creditOrders?.links && <Pagination links={creditOrders.links} />}
+                {creditOrders?.links && <Pagination paginator={creditOrders} />}
                 </>
             )}
 
@@ -261,7 +261,7 @@ export default function ReportTables({ activeReport, services, orders, expenses,
                         </tbody>
                     </table>
                 </div>
-                {pendingJobs?.links && <Pagination links={pendingJobs.links} />}
+                {pendingJobs?.links && <Pagination paginator={pendingJobs} />}
                 </>
             )}
 
@@ -293,7 +293,7 @@ export default function ReportTables({ activeReport, services, orders, expenses,
                         </tbody>
                     </table>
                 </div>
-                {topCustomers?.links && <Pagination links={topCustomers.links} />}
+                {topCustomers?.links && <Pagination paginator={topCustomers} />}
                 </>
             )}
 
@@ -327,7 +327,7 @@ export default function ReportTables({ activeReport, services, orders, expenses,
                         </tbody>
                     </table>
                 </div>
-                {deletedOrders?.links && <Pagination links={deletedOrders.links} />}
+                {deletedOrders?.links && <Pagination paginator={deletedOrders} />}
                 </>
             )}
         </div>

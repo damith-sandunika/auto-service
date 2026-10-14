@@ -88,7 +88,7 @@ export default function SuppliersIndex({ suppliers }) {
                                     </tr>
                                 ))}
                             </DataTable>
-                            {suppliers.links && <Pagination links={suppliers.links} />}
+                            {suppliers.links && <Pagination paginator={suppliers} />}
                         </div>
                     </div>
                 </div>

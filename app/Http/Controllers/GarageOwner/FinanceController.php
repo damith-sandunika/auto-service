@@ -39,7 +39,7 @@ class FinanceController extends Controller
 
         $transactions = $query->orderBy('date', 'desc')
             ->orderBy('id', 'desc')
-            ->paginate(50)
+            ->paginate(15)
             ->withQueryString();
 
         // Calculate Totals

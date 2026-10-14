@@ -29,7 +29,7 @@ class OrderController extends Controller
                 return $q->where('garage_id', $garageId);
             })
             ->orderBy('id', 'desc')
-            ->paginate(20, ['*'], 'invoices_page')
+            ->paginate(15, ['*'], 'invoices_page')
             ->withQueryString();
             
         $jobs = Job::with('vehicle')
@@ -37,7 +37,7 @@ class OrderController extends Controller
                 return $q->where('garage_id', $garageId);
             })
             ->orderBy('id', 'desc')
-            ->paginate(20, ['*'], 'jobs_page')
+            ->paginate(15, ['*'], 'jobs_page')
             ->withQueryString();
 
         $branches = [];
@@ -49,7 +49,7 @@ class OrderController extends Controller
                 return $q->where('garage_id', $garageId);
             })
             ->orderBy('id', 'desc')
-            ->paginate(20, ['*'], 'deleted_page')
+            ->paginate(15, ['*'], 'deleted_page')
             ->withQueryString();
 
         $activeCount = Invoice::when($garageId, fn($q) => $q->where('garage_id', $garageId))->count();

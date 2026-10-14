@@ -127,7 +127,7 @@ export default function WarrantiesIndex({ warranties, customers, vehicles }) {
                             </tbody>
                         </table>
                     </div>
-                    {warranties.links && <Pagination links={warranties.links} />}
+                    {warranties.links && <Pagination paginator={warranties} />}
                 </div>
             </div>
 

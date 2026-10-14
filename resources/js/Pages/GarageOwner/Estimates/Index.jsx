@@ -137,7 +137,7 @@ export default function EstimatesIndex({ estimates }) {
                             </tbody>
                         </table>
                     </div>
-                    {estimates.links && <Pagination links={estimates.links} />}
+                    {estimates.links && <Pagination paginator={estimates} />}
                 </div>
             </div>
 

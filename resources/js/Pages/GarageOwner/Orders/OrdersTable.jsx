@@ -138,7 +138,7 @@ export default function OrdersTable({ invoices, deletedOrders, activeCount = 0, 
                             </tbody>
                         </table>
                     </div>
-                    {invoices?.links && <Pagination links={invoices.links} />}
+                    {invoices?.links && <Pagination paginator={invoices} />}
                 </>
             )}
 
@@ -210,7 +210,7 @@ export default function OrdersTable({ invoices, deletedOrders, activeCount = 0, 
                             </tbody>
                         </table>
                     </div>
-                    {deletedOrders?.links && <Pagination links={deletedOrders.links} />}
+                    {deletedOrders?.links && <Pagination paginator={deletedOrders} />}
                 </>
             )}
         </div>

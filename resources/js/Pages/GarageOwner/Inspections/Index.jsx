@@ -79,7 +79,7 @@ export default function InspectionsIndex({ inspections }) {
                             </tbody>
                         </table>
                     </div>
-                    {inspections.links && <Pagination links={inspections.links} />}
+                    {inspections.links && <Pagination paginator={inspections} />}
                 </div>
             </div>
         </AuthenticatedLayout>

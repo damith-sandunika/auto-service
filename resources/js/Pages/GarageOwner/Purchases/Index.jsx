@@ -46,7 +46,7 @@ export default function PurchasesIndex({ purchases, suppliers, inventories, tota
                                 </tr>
                             ))}
                         </DataTable>
-                        {purchases.links && <Pagination links={purchases.links} />}
+                        {purchases.links && <Pagination paginator={purchases} />}
                     </div>
                 </div>
             </div>

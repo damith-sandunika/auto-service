@@ -129,7 +129,7 @@ export default function Staff({ staff, garages, filters = {} }) {
                     </div>
                     {staff?.links && (
                         <div className="p-4 border-t border-slate-100">
-                            <Pagination links={staff.links} />
+                            <Pagination paginator={staff} />
                         </div>
                     )}
                 </div>

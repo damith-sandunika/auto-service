@@ -93,7 +93,7 @@ export default function VehiclesIndex({ customers, vehicles }) {
                             </tbody>
                         </table>
                     </div>
-                    {vehicles.links && <Pagination links={vehicles.links} />}
+                    {vehicles.links && <Pagination paginator={vehicles} />}
                 </div>
             </div>
 

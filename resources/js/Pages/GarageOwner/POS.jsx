@@ -406,7 +406,7 @@ export default function POS({ auth, jobs, customers, mechanics, branches, select
                 {/* Pagination */}
                 {jobs?.links && (
                     <div className="mt-4">
-                        <Pagination links={jobs.links} />
+                        <Pagination paginator={jobs} />
                     </div>
                 )}
             </div>

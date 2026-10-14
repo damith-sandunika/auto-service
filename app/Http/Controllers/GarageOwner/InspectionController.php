@@ -22,7 +22,7 @@ class InspectionController extends Controller
         $inspections = Inspection::where('garage_id', $garageId)
             ->with(['vehicle', 'inspector'])
             ->orderBy('inspection_date', 'desc')
-            ->paginate(20);
+            ->paginate(15);
 
         return Inertia::render('GarageOwner/Inspections/Index', [
             'inspections' => $inspections,

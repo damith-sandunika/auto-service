@@ -24,7 +24,7 @@ class SupplierController extends Controller
         $suppliers = Supplier::where('garage_id', $garage->id)
             ->withCount('purchaseOrders')
             ->orderBy('name')
-            ->paginate(20);
+            ->paginate(15);
 
         return Inertia::render('GarageOwner/Suppliers/Index', [
             'suppliers' => $suppliers

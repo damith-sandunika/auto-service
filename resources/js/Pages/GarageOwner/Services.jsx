@@ -121,7 +121,7 @@ export default function Services({ services }) {
                             </div>
                         ))}
                         </div>
-                        {services.links && <Pagination links={services.links} />}
+                        {services.links && <Pagination paginator={services} />}
                     </div>
                 ) : (
                     <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center shadow-sm">

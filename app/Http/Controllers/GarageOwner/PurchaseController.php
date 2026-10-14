@@ -28,7 +28,7 @@ class PurchaseController extends Controller
         $purchases = PurchaseOrder::where('garage_id', $garage->id)
             ->with(['supplier', 'items.inventory'])
             ->orderBy('date', 'desc')
-            ->paginate(20);
+            ->paginate(15);
             
         $suppliers = Supplier::where('garage_id', $garage->id)->withCount('purchaseOrders')->orderBy('name')->get();
         $inventories = Inventory::where('garage_id', $garage->id)->orderBy('item_name')->get();

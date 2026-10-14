@@ -63,7 +63,7 @@ export default function Inventory({ inventory, lowStockCount, locations, activeO
                         </tr>
                     ))}
                 </DataTable>
-                {inventory?.links && <Pagination links={inventory.links} />}
+                {inventory?.links && <Pagination paginator={inventory} />}
             </div>
 
             <LocationsModal show={isLocationsModalOpen} onClose={() => setIsLocationsModalOpen(false)} locations={locations} />

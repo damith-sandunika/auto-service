@@ -152,7 +152,7 @@ export default function RemindersIndex({ reminders, filters = {} }) {
                         </div>
                         {reminders?.links && (
                             <div className="p-4 border-t border-slate-100">
-                                <Pagination links={reminders.links} />
+                                <Pagination paginator={reminders} />
                             </div>
                         )}
                     </div>
