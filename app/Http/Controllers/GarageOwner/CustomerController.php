@@ -9,15 +9,25 @@ use Inertia\Inertia;
 
 class CustomerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $customers = User::where('role', 'customer')
-            ->orWhereNull('role')
-            ->withCount('vehicles')
-            ->get();
+        $query = User::where('role', 'vehicle_owner')
+            ->orWhereNull('role');
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $customers = $query->withCount('vehicles')->orderBy('id', 'desc')->paginate(15)->withQueryString();
 
         return Inertia::render('GarageOwner/Customers/Index', [
-            'customers' => $customers
+            'customers' => $customers,
+            'filters'   => $request->only('search'),
         ]);
     }
 
